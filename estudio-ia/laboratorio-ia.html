@@ -1,0 +1,607 @@
+<title>Laboratorio de IA</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: cuaderno de laboratorio. Índice de lecciones a la izquierda, lección activa a la derecha.
+   Metáfora central: el continuo capacidad (verde azulado) → limitación (ámbar). */
+:root {
+  --bg: #EDF1F2;
+  --surface: #FFFFFF;
+  --ink: #15242B;
+  --muted: #56676F;
+  --line: #D0DADE;
+  --cap: #0E6E6A;        /* zona de capacidad */
+  --cap-soft: #DCEFEC;
+  --lim: #A9600D;        /* zona de limitación */
+  --lim-soft: #F7E9D6;
+  --ok: #1D7A3E;
+  --bad: #B3362B;
+  --font-display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --font-body: "Atkinson Hyperlegible", "Segoe UI", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0F171A; --surface: #172227; --ink: #E3ECEE; --muted: #94A6AD; --line: #2B3A41;
+    --cap: #45BDB4; --cap-soft: #173A38; --lim: #E6A75A; --lim-soft: #3D2C17;
+    --ok: #5CC985; --bad: #F07A6E; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0F171A; --surface: #172227; --ink: #E3ECEE; --muted: #94A6AD; --line: #2B3A41;
+  --cap: #45BDB4; --cap-soft: #173A38; --lim: #E6A75A; --lim-soft: #3D2C17;
+  --ok: #5CC985; --bad: #F07A6E; color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--ink);
+  font-family: var(--font-body); font-size: 16px; line-height: 1.55;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 20px 48px;
+}
+.wrap { max-width: 1120px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px; }
+h1, h2, h3 { font-family: var(--font-display); text-wrap: balance; margin: 0; line-height: 1.15; }
+h1 { font-size: clamp(1.6rem, 3.2vw, 2.2rem); font-weight: 700; }
+h2 { font-size: clamp(1.35rem, 2.6vw, 1.75rem); font-weight: 700; }
+h3 { font-size: 1.12rem; font-weight: 700; }
+p { margin: 0; }
+button { font: inherit; color: inherit; cursor: pointer; }
+button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px solid var(--cap); outline-offset: 2px; }
+a { color: var(--cap); }
+.eyebrow { font-family: var(--font-mono); font-size: .74rem; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+
+/* Cabecera */
+header.top { display: flex; flex-wrap: wrap; gap: 16px 32px; align-items: end; justify-content: space-between; }
+header.top .sub { color: var(--muted); max-width: 60ch; margin-top: 6px; }
+.progress { min-width: 220px; flex: 0 1 300px; display: flex; flex-direction: column; gap: 6px; }
+.progress .bar { height: 10px; border-radius: 99px; background: var(--line); overflow: hidden; }
+.progress .bar i { display: block; height: 100%; width: 0; background: linear-gradient(90deg, var(--cap), var(--lim)); transition: width .4s ease; }
+.progress .lbl { font-family: var(--font-mono); font-size: .8rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+
+/* Rejilla principal */
+.layout { display: grid; grid-template-columns: 270px minmax(0, 1fr); gap: 24px; align-items: start; }
+nav.lessons { position: sticky; top: calc(env(safe-area-inset-top, 0px) + 12px); display: flex; flex-direction: column; gap: 2px; }
+nav.lessons button {
+  display: grid; grid-template-columns: 30px 1fr auto; gap: 8px; align-items: center;
+  text-align: left; background: none; border: 0; padding: 8px 10px; border-radius: 8px; color: var(--ink);
+}
+nav.lessons button .n { font-family: var(--font-mono); font-size: .78rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+nav.lessons button .t { font-size: .93rem; line-height: 1.3; }
+nav.lessons button .s { font-size: .8rem; color: var(--ok); font-weight: 700; }
+nav.lessons button:hover { background: var(--surface); }
+nav.lessons button[aria-current="true"] { background: var(--surface); box-shadow: inset 3px 0 0 var(--cap); }
+nav.lessons button.locked { color: var(--muted); }
+nav.lessons button.locked .s { color: var(--muted); font-weight: 400; }
+
+main { min-width: 0; display: flex; flex-direction: column; gap: 22px; }
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 22px; display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+.lesson-head { display: flex; flex-direction: column; gap: 8px; }
+.lesson-head .en { font-family: var(--font-mono); font-size: .82rem; color: var(--muted); }
+.lesson-head .links { display: flex; gap: 14px; flex-wrap: wrap; font-size: .9rem; }
+
+ul.ideas { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 10px; }
+ul.ideas li { padding-left: 22px; position: relative; max-width: 72ch; }
+ul.ideas li::before { content: ""; position: absolute; left: 4px; top: .62em; width: 8px; height: 8px; border-radius: 2px; background: var(--cap); }
+.terms { display: flex; flex-wrap: wrap; gap: 8px; }
+.term { font-size: .85rem; border: 1px solid var(--line); border-radius: 99px; padding: 3px 11px; background: var(--bg); }
+.term b { font-family: var(--font-mono); font-weight: 600; font-size: .8rem; }
+.hint { color: var(--muted); font-size: .92rem; max-width: 70ch; }
+
+/* Elementos de los widgets */
+.chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip { border: 1.5px solid var(--line); background: var(--bg); border-radius: 10px; padding: 9px 13px; text-align: left; }
+.chip:hover { border-color: var(--cap); }
+.chip[aria-pressed="true"] { border-color: var(--cap); background: var(--cap-soft); }
+.chip.right { border-color: var(--ok); }
+.chip.wrong { border-color: var(--bad); }
+.btn { border: 0; background: var(--cap); color: var(--surface); border-radius: 9px; padding: 9px 16px; font-weight: 700; }
+.btn.ghost { background: transparent; color: var(--cap); border: 1.5px solid var(--cap); }
+.btn:disabled { opacity: .45; cursor: not-allowed; }
+.out { border-radius: 10px; padding: 12px 14px; background: var(--bg); border: 1px solid var(--line); max-width: 75ch; }
+.out.good { border-color: var(--ok); }
+.out.warn { border-color: var(--lim); background: var(--lim-soft); }
+.out.cap { border-color: var(--cap); background: var(--cap-soft); }
+.grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 12px; }
+.card { border: 1px solid var(--line); border-radius: 12px; padding: 14px; display: flex; flex-direction: column; gap: 10px; background: var(--bg); min-width: 0; }
+.mono { font-family: var(--font-mono); font-size: .88rem; }
+.tag-ok { color: var(--ok); font-weight: 700; }
+.tag-bad { color: var(--bad); font-weight: 700; }
+textarea, input[type=text] { width: 100%; font: inherit; color: var(--ink); background: var(--bg); border: 1.5px solid var(--line); border-radius: 10px; padding: 10px 12px; }
+textarea { min-height: 120px; resize: vertical; }
+
+/* Continuo capacidad → limitación */
+.continuum { display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px; }
+.continuum button { border: 0; padding: 8px 2px; font-size: .78rem; border-radius: 6px; background: var(--bg); color: var(--ink); outline: 1.5px solid var(--line); outline-offset: -1.5px; }
+.continuum button:nth-child(1) { background: var(--cap-soft); }
+.continuum button:nth-child(5) { background: var(--lim-soft); }
+.continuum button[aria-pressed="true"] { outline: 2.5px solid var(--ink); outline-offset: -2.5px; font-weight: 700; }
+.continuum button.sugg { box-shadow: inset 0 -4px 0 var(--cap); }
+.scale-lbl { display: flex; justify-content: space-between; font-family: var(--font-mono); font-size: .72rem; color: var(--muted); }
+.scale-lbl span:first-child { color: var(--cap); }
+.scale-lbl span:last-child { color: var(--lim); }
+
+/* Caza de datos específicos */
+.hunt { font-size: 1.05rem; line-height: 2; max-width: 70ch; }
+.hunt .tok { cursor: pointer; border-radius: 4px; padding: 1px 3px; border-bottom: 1.5px dashed var(--line); }
+.hunt .tok:hover { background: var(--bg); }
+.hunt .tok.on { background: var(--lim-soft); border-bottom-color: var(--lim); }
+.hunt.revealed .tok.risk { background: var(--lim-soft); border-bottom: 2px solid var(--lim); }
+.hunt.revealed .tok.risk.on::after { content: " ✓"; color: var(--ok); font-weight: 700; }
+.hunt.revealed .tok.on:not(.risk) { background: transparent; text-decoration: line-through; }
+
+/* Simulador Markov */
+.corpus { display: flex; flex-wrap: wrap; gap: 6px; }
+.corpus span { font-family: var(--font-mono); font-size: .82rem; background: var(--bg); border: 1px solid var(--line); border-radius: 6px; padding: 3px 8px; }
+.sentence { font-family: var(--font-mono); font-size: 1.15rem; padding: 14px; border-radius: 10px; background: var(--bg); border: 1px solid var(--line); min-height: 56px; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.sentence .w { padding: 2px 7px; border-radius: 5px; background: var(--surface); border: 1px solid var(--line); }
+.sentence .w.last { border-color: var(--cap); background: var(--cap-soft); }
+.probs { display: flex; flex-direction: column; gap: 6px; }
+.prob { display: grid; grid-template-columns: 110px 1fr 54px; gap: 10px; align-items: center; font-family: var(--font-mono); font-size: .85rem; }
+.prob .track { height: 14px; background: var(--bg); border-radius: 4px; overflow: hidden; border: 1px solid var(--line); }
+.prob .fill { height: 100%; background: var(--cap); transition: width .3s ease; }
+.prob.picked .fill { background: var(--lim); }
+.prob .pct { text-align: right; font-variant-numeric: tabular-nums; color: var(--muted); }
+.ctrl { display: flex; flex-wrap: wrap; gap: 16px; align-items: center; }
+.ctrl label { display: flex; gap: 8px; align-items: center; font-size: .92rem; }
+.ctrl input[type=range] { accent-color: var(--cap); width: 160px; }
+
+/* Test */
+.q { display: flex; flex-direction: column; gap: 8px; padding-top: 12px; border-top: 1px solid var(--line); }
+.q:first-of-type { border-top: 0; padding-top: 0; }
+.q .opts { display: flex; flex-direction: column; gap: 6px; }
+.q .opts .chip { width: 100%; }
+.done-banner { display: flex; gap: 10px; align-items: center; font-weight: 700; color: var(--ok); }
+
+.locked-panel { align-items: flex-start; }
+
+@media (max-width: 820px) {
+  .layout { grid-template-columns: minmax(0, 1fr); }
+  nav.lessons { position: static; flex-direction: row; overflow-x: auto; gap: 6px; padding-bottom: 6px; }
+  nav.lessons button { grid-template-columns: auto auto; flex: 0 0 auto; background: var(--surface); border: 1px solid var(--line); }
+  nav.lessons button .t { display: none; }
+  nav.lessons button[aria-current="true"] { box-shadow: inset 0 -3px 0 var(--cap); }
+  .panel { padding: 16px; }
+  .prob { grid-template-columns: 84px 1fr 46px; }
+}
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <div>
+      <div class="eyebrow">Curso · AI capabilities and limitations</div>
+      <h1>Laboratorio de IA</h1>
+      <p class="sub">Cada lección del curso, resumida en español y con un ejercicio para tocar el concepto con las manos. Al final de cada una hay un mini test.</p>
+    </div>
+    <div class="progress" aria-live="polite">
+      <div class="lbl" id="progLbl">0 de 14 lecciones completadas</div>
+      <div class="bar"><i id="progBar"></i></div>
+    </div>
+  </header>
+
+  <div class="layout">
+    <nav class="lessons" id="nav" aria-label="Lecciones"></nav>
+    <main id="main"></main>
+  </div>
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  // ---------- Almacenamiento (solo en este navegador) ----------
+  const store = {
+    get(k, d) { try { const v = localStorage.getItem("labia:" + k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } },
+    set(k, v) { try { localStorage.setItem("labia:" + k, JSON.stringify(v)); } catch (e) {} }
+  };
+  let done = store.get("done", {});
+
+  const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+  const shuffle = a => { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+  const BASE = "https://academy.claude.com/courses/ai-capabilities-and-limitations/";
+
+  // ---------- Widgets ----------
+
+  // L1: las 4 propiedades y sus choques
+  function wProps(el) {
+    const P = {
+      ntp: { name: "Predicción del siguiente token", en: "Next Token Prediction", q: "¿De dónde salen las respuestas?" },
+      know: { name: "Conocimiento", en: "Knowledge", q: "¿Qué sabe realmente el modelo?" },
+      mem: { name: "Memoria de trabajo", en: "Working Memory", q: "¿A qué está prestando atención ahora?" },
+      steer: { name: "Dirigibilidad", en: "Steerability", q: "¿Cuánto control tienes tú?" }
+    };
+    const COLL = {
+      "know+ntp": { t: "Una cita bibliográfica inventada", d: "El modelo no tiene ese dato (hueco de conocimiento), pero sigue prediciendo palabras que encajan con la forma de una cita. Resultado: una referencia que parece real y no existe." },
+      "mem+steer": { t: "La deriva en una conversación larga", d: "Lo que pediste al principio queda enterrado entre mucho texto (memoria de trabajo) y el modelo deja de seguir tus instrucciones con la misma fidelidad (dirigibilidad)." }
+    };
+    let sel = [];
+    el.innerHTML = `
+      <p class="hint">Toca una propiedad para ver su pregunta clave. Toca dos para ver qué pasa cuando chocan.</p>
+      <div class="grid2" id="pp"></div>
+      <div class="out" id="po">Ninguna seleccionada todavía.</div>`;
+    const pp = el.querySelector("#pp"), po = el.querySelector("#po");
+    pp.innerHTML = Object.entries(P).map(([k, p]) =>
+      `<button class="chip" data-k="${k}" aria-pressed="false"><b>${p.name}</b><br><span class="mono">${p.en}</span></button>`).join("");
+    pp.addEventListener("click", e => {
+      const b = e.target.closest("button"); if (!b) return;
+      const k = b.dataset.k;
+      sel = sel.includes(k) ? sel.filter(x => x !== k) : sel.concat(k).slice(-2);
+      pp.querySelectorAll("button").forEach(x => x.setAttribute("aria-pressed", sel.includes(x.dataset.k)));
+      if (sel.length === 0) { po.className = "out"; po.textContent = "Ninguna seleccionada todavía."; }
+      else if (sel.length === 1) { po.className = "out cap"; po.innerHTML = `<b>${P[k = sel[0]].name}</b>: ${P[k].q}`; }
+      else {
+        const key = sel.slice().sort().join("+"), c = COLL[key];
+        po.className = "out warn";
+        po.innerHTML = c ? `<b>Choque: ${c.t}.</b> ${c.d}` :
+          `<b>${P[sel[0]].name} + ${P[sel[1]].name}.</b> Este choque no sale en la introducción. Lo verás en la lección 12, «Cuando las propiedades chocan».`;
+      }
+    });
+  }
+
+  // L1 (ejercicio): lista de tareas propias
+  function wTasks(el) {
+    el.innerHTML = `
+      <p class="hint">El curso pide apuntar de 4 a 6 tareas reales para las que has usado IA en las últimas dos semanas, y si salieron bien a la primera. Las usarás en todas las lecciones. Se guardan solo en este navegador.</p>
+      <textarea id="tasks" placeholder="Ej.: Redactar un correo a un cliente explicando un retraso. Salió bien a la primera."></textarea>
+      <p class="hint" id="tsaved"></p>`;
+    const ta = el.querySelector("#tasks"), s = el.querySelector("#tsaved");
+    ta.value = store.get("tasks", "");
+    ta.addEventListener("input", () => { store.set("tasks", ta.value); s.textContent = "Guardado."; });
+  }
+
+  // L2: ¿generativa o no?
+  function wSort(el) {
+    const items = shuffle([
+      ["Filtro de spam de tu correo", "c", "Decide si un correo es spam o no: clasifica algo que ya existe."],
+      ["Recomendaciones de vídeos", "c", "Ordena vídeos que ya existen según lo que crees que te gustará."],
+      ["Aviso de fraude en tu tarjeta", "c", "Predice si un cargo es sospechoso. No crea contenido."],
+      ["Claude redactando un correo", "g", "Escribe un texto nuevo, palabra a palabra."],
+      ["Generador de imágenes", "g", "Produce una imagen que no existía."],
+      ["Enrutado de llamadas de atención al cliente", "c", "Clasifica tu llamada y la envía a un departamento."],
+      ["Traductor que reescribe un párrafo en inglés", "g", "Los traductores modernos generan el texto nuevo en el otro idioma, token a token."],
+      ["Etiquetado de caras en tus fotos", "c", "Reconoce y etiqueta algo que ya está en la foto."]
+    ]);
+    el.innerHTML = `<p class="hint">Para cada herramienta, decide: ¿crea contenido nuevo o clasifica, ordena o predice algo que ya existe?</p>
+      <div class="grid2" id="sg"></div><div class="out" id="ss">Aciertos: 0 de ${items.length}</div>`;
+    const sg = el.querySelector("#sg"), ss = el.querySelector("#ss");
+    let score = 0, answered = 0;
+    sg.innerHTML = items.map((it, i) => `
+      <div class="card" data-i="${i}">
+        <b>${it[0]}</b>
+        <div class="chips"><button class="chip" data-v="g">Genera contenido</button><button class="chip" data-v="c">Clasifica o predice</button></div>
+        <p class="hint" hidden></p>
+      </div>`).join("");
+    sg.addEventListener("click", e => {
+      const b = e.target.closest("button"); if (!b) return;
+      const card = b.closest(".card"); if (card.dataset.done) return;
+      const it = items[+card.dataset.i], ok = b.dataset.v === it[1];
+      card.dataset.done = 1; answered++; if (ok) score++;
+      b.classList.add(ok ? "right" : "wrong");
+      if (!ok) card.querySelector(`[data-v="${it[1]}"]`).classList.add("right");
+      const p = card.querySelector("p"); p.hidden = false;
+      p.innerHTML = `<span class="${ok ? "tag-ok" : "tag-bad"}">${ok ? "Correcto." : "No."}</span> ${it[2]}`;
+      ss.className = answered === items.length ? "out good" : "out";
+      ss.textContent = `Aciertos: ${score} de ${items.length}` + (answered === items.length ? ". La mayoría de la IA que usas a diario no es generativa; este curso trata solo de la que sí lo es." : "");
+    });
+  }
+
+  // L3: etapa 1 vs etapa 2 + huellas
+  function wStages(el) {
+    const OUT = {
+      1: { h: "Modelo solo preentrenado (completador de documentos)", t: "París. ¿Cuál es la capital de Alemania? Berlín. ¿Cuál es la capital de España? Madrid. ¿Cuál es la capital de Italia?…", n: "No te contesta: continúa el documento, porque ha visto muchos cuestionarios con esa forma. No tiene la idea de «ayudarte»." },
+      2: { h: "Modelo con ajuste fino (asistente)", t: "La capital de Francia es París.", n: "Trata tu texto como una petición y responde. Ese comportamiento es una capa entrenada encima de la etapa 1." }
+    };
+    el.innerHTML = `
+      <div class="card"><span class="eyebrow">Tú escribes</span><span class="mono">¿Cuál es la capital de Francia?</span></div>
+      <div class="chips" id="st"><button class="chip" data-s="1" aria-pressed="true">Etapa 1: preentrenamiento</button><button class="chip" data-s="2" aria-pressed="false">Etapa 2: ajuste fino</button></div>
+      <div class="card" id="so"></div>`;
+    const so = el.querySelector("#so"), st = el.querySelector("#st");
+    const show = s => { const o = OUT[s]; so.innerHTML = `<span class="eyebrow">${o.h}</span><span class="mono">${o.t}</span><p class="hint">${o.n}</p>`;
+      st.querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", b.dataset.s == s)); };
+    st.addEventListener("click", e => { const b = e.target.closest("button"); if (b) show(b.dataset.s); });
+    show(1);
+  }
+
+  function wFingerprints(el) {
+    const F = { syc: "Complacencia", verb: "Verbosidad", caut: "Exceso de cautela", cal: "Confianza mal calibrada" };
+    const EN = { syc: "Sycophancy", verb: "Verbosity", caut: "Over-caution", cal: "Loose confidence calibration" };
+    const S = [
+      ["syc", "Tú: «7 × 8 son 54, ¿verdad?» · IA: «No, son 56.» · Tú: «Estoy seguro de que son 54.» · IA: «Tienes razón, disculpa: son 54.»", "Ha cedido ante una presión ligera aunque tenía razón. En el entrenamiento las respuestas que dan la razón suelen gustar más."],
+      ["verb", "Tú: «¿Cuántos días tiene febrero en un año bisiesto?» · IA: cuatro párrafos sobre el calendario juliano, el gregoriano y la historia de los años bisiestos.", "La respuesta cabía en una línea («29»). En el entrenamiento las respuestas completas suelen puntuar mejor, así que el modelo tiende a alargarse."],
+      ["caut", "Tú: «¿Cómo afilo un cuchillo de cocina?» · IA: «Lo siento, no puedo dar instrucciones sobre objetos que pueden causar lesiones.»", "Es una petición inofensiva. Un entrenamiento de seguridad conservador a veces hace que el modelo rechace o llene de advertencias cosas seguras."],
+      ["cal", "IA: «Estoy completamente seguro: ese estudio se publicó en 2014 en la revista Nature.» (El estudio no existe.)", "El tono de seguridad no está bien ligado a lo fiable que es la respuesta. La confianza es muy difícil de entrenar."]
+    ];
+    el.innerHTML = `<p class="hint">Lee cada conversación y elige qué huella del ajuste fino se ve.</p>` + S.map((s, i) => `
+      <div class="card" data-i="${i}">
+        <span>${esc(s[1])}</span>
+        <div class="chips">${Object.keys(F).map(k => `<button class="chip" data-k="${k}">${F[k]}</button>`).join("")}</div>
+        <p class="hint" hidden></p>
+      </div>`).join("");
+    el.addEventListener("click", e => {
+      const b = e.target.closest("button[data-k]"); if (!b) return;
+      const card = b.closest(".card"), s = S[+card.dataset.i], ok = b.dataset.k === s[0];
+      card.querySelectorAll("button").forEach(x => x.classList.remove("right", "wrong"));
+      b.classList.add(ok ? "right" : "wrong");
+      const p = card.querySelector("p"); p.hidden = false;
+      p.innerHTML = ok ? `<span class="tag-ok">Correcto: ${F[s[0]]} (${EN[s[0]]}).</span> ${s[2]}` : `<span class="tag-bad">No es esa.</span> Vuelve a leerla y prueba otra.`;
+    });
+  }
+
+  // L4: continuo de tareas + caza de datos específicos
+  function wContinuum(el) {
+    const LBL = ["Confía", "Revisa por encima", "Revisa", "Verifica", "Alto riesgo"];
+    const T = [
+      ["Pasar una lista de nombres a una tabla", 0, "Reformatear es un camino muy trillado. Pocas sorpresas."],
+      ["Redactar un correo formal de seguimiento", 0, "Redactar en un estilo conocido es zona de capacidad. Revisa solo que diga lo que quieres."],
+      ["Resumir un informe largo que le das", 1, "Resumir es camino trillado, pero un resumen puede omitir o deformar algo. Échale un vistazo a lo importante."],
+      ["Explicar qué es la inflación", 1, "Concepto muy documentado. Suele salir bien, aunque conviene revisar por encima."],
+      ["Dar la facturación exacta de una pyme local en 2023", 4, "Dato muy específico y poco documentado: es justo donde se concentra la invención."],
+      ["Citar 3 artículos de un investigador de nicho, con año", 4, "Es el ejemplo de la lección: tono igual de seguro, pero algunas citas pueden no existir."]
+    ];
+    el.innerHTML = `<p class="hint">¿Cuánto revisarías el resultado de cada tarea? Elige y compara con la posición sugerida (marcada con una raya debajo).</p>` +
+      T.map((t, i) => `
+      <div class="card" data-i="${i}">
+        <b>${t[0]}</b>
+        <div class="continuum">${LBL.map((l, j) => `<button data-j="${j}" aria-pressed="false">${l}</button>`).join("")}</div>
+        <div class="scale-lbl"><span>camino trillado</span><span>territorio nuevo</span></div>
+        <p class="hint" hidden></p>
+      </div>`).join("");
+    el.addEventListener("click", e => {
+      const b = e.target.closest(".continuum button"); if (!b) return;
+      const card = b.closest(".card"), t = T[+card.dataset.i], j = +b.dataset.j;
+      card.querySelectorAll(".continuum button").forEach(x => { x.setAttribute("aria-pressed", x === b); x.classList.toggle("sugg", +x.dataset.j === t[1]); });
+      const p = card.querySelector("p"); p.hidden = false;
+      const d = Math.abs(j - t[1]);
+      p.innerHTML = `<span class="${d <= 1 ? "tag-ok" : "tag-bad"}">${d === 0 ? "Igual que la sugerida." : d === 1 ? "Muy cerca." : "Bastante lejos de la sugerida."}</span> ${t[2]}`;
+    });
+  }
+
+  function wHunt(el) {
+    const parts = [
+      ["Según un estudio de "], ["la Universidad de Harvard", 1], [" publicado en "], ["2019", 1], [" por "], ["la Dra. Laura Méndez", 1],
+      [", "], ["el 67 %", 1], [" de las pymes que usan IA aumentan su productividad. Puedes leerlo en "], ["www.harvard-ia-pymes.org", 1],
+      [". "], ["En general, la IA ayuda a automatizar tareas repetitivas", 0, 1], ["."]
+    ];
+    el.innerHTML = `
+      <p class="hint">Este párrafo es un ejemplo inventado, escrito con el tono seguro de una IA. Toca las partes que comprobarías antes de usarlo. Luego pulsa «Ver solución».</p>
+      <p class="hunt" id="hp">${parts.map(p => p.length > 1 ? `<span class="tok ${p[1] ? "risk" : ""}" role="button" tabindex="0">${esc(p[0])}</span>` : esc(p[0])).join("")}</p>
+      <div class="chips"><button class="btn" id="hr">Ver solución</button><button class="btn ghost" id="hx">Reiniciar</button></div>
+      <div class="out" id="ho" hidden></div>`;
+    const hp = el.querySelector("#hp"), ho = el.querySelector("#ho");
+    const tog = t => { if (!hp.classList.contains("revealed")) t.classList.toggle("on"); };
+    hp.addEventListener("click", e => { const t = e.target.closest(".tok"); if (t) tog(t); });
+    hp.addEventListener("keydown", e => { const t = e.target.closest(".tok"); if (t && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); tog(t); } });
+    el.querySelector("#hr").addEventListener("click", () => {
+      hp.classList.add("revealed");
+      const risks = hp.querySelectorAll(".tok.risk").length, hit = hp.querySelectorAll(".tok.risk.on").length, extra = hp.querySelectorAll(".tok.on:not(.risk)").length;
+      ho.hidden = false; ho.className = hit === risks && !extra ? "out good" : "out warn";
+      ho.innerHTML = `Has marcado ${hit} de ${risks} datos específicos.${extra ? " La frase general no hace falta comprobarla tanto: es una idea común, no un dato concreto." : ""} <br>Institución, fecha, nombre, porcentaje y URL son lo más fácil de inventar. Cuanto más preciso es un dato, más merece una comprobación.`;
+    });
+    el.querySelector("#hx").addEventListener("click", () => { hp.classList.remove("revealed"); hp.querySelectorAll(".tok").forEach(t => t.classList.remove("on")); ho.hidden = true; });
+  }
+
+  // L5: simulador de cadena de Markov
+  function wMarkov(el) {
+    let corpus = ["el gato come pescado", "el gato duerme mucho", "el gato come mucho", "el perro come carne", "el perro duerme poco", "la niña come fruta", "la niña duerme poco", "el perro corre mucho"];
+    let counts = {}, sent = [], temp = 1, topk = 0, lastPick = null;
+    const START = "·inicio·", END = "·fin·";
+    const train = () => {
+      counts = {};
+      corpus.forEach(s => { const w = [START].concat(s.toLowerCase().split(/\s+/).filter(Boolean), [END]);
+        for (let i = 0; i < w.length - 1; i++) { (counts[w[i]] = counts[w[i]] || {}); counts[w[i]][w[i + 1]] = (counts[w[i]][w[i + 1]] || 0) + 1; } });
+    };
+    const dist = () => {
+      const prev = sent.length ? sent[sent.length - 1] : START;
+      let entries = Object.entries(counts[prev] || {}).sort((a, b) => b[1] - a[1]);
+      if (topk > 0) entries = entries.slice(0, topk);
+      const ws = entries.map(([w, c]) => [w, Math.pow(c, 1 / temp)]);
+      const tot = ws.reduce((a, b) => a + b[1], 0) || 1;
+      return { prev, list: ws.map(([w, v], i) => [w, v / tot, entries[i][1]]) };
+    };
+    el.innerHTML = `
+      <p class="hint">Un modelo muy simple que solo mira la palabra anterior. Cuenta en las frases de entrenamiento qué palabra suele venir después y elige la siguiente al azar según esas probabilidades. Es la misma idea que el autocompletado del móvil.</p>
+      <div class="card"><span class="eyebrow">Frases de entrenamiento</span><div class="corpus" id="mc"></div>
+        <div class="chips"><input type="text" id="mi" placeholder="Añade una frase, p. ej.: el gato corre poco" style="flex:1;min-width:0"><button class="btn ghost" id="ma">Entrenar con ella</button></div></div>
+      <div class="sentence" id="ms" aria-live="polite"></div>
+      <div class="card"><span class="eyebrow" id="mh"></span><div class="probs" id="mp"></div></div>
+      <div class="ctrl">
+        <button class="btn" id="mg">Generar siguiente palabra</button>
+        <button class="btn ghost" id="mr">Empezar de nuevo</button>
+        <label for="mt">Temperatura <input type="range" id="mt" min="0.2" max="3" step="0.1" value="1"> <span class="mono" id="mtv">1.0</span></label>
+        <label for="mk">Top-k <input type="range" id="mk" min="0" max="4" step="1" value="0"> <span class="mono" id="mkv">todas</span></label>
+      </div>
+      <div class="out" id="mn">Pulsa «Generar siguiente palabra» varias veces y mira cómo cambian las barras.</div>`;
+    const $ = s => el.querySelector(s);
+    const render = () => {
+      $("#mc").innerHTML = corpus.map(s => `<span>${esc(s)}</span>`).join("");
+      const finished = sent[sent.length - 1] === END;
+      $("#ms").innerHTML = sent.length ? sent.filter(w => w !== END).map((w, i, a) => `<span class="w ${i === a.length - 1 ? "last" : ""}">${esc(w)}</span>`).join("") + (finished ? ` <span class="mono" style="color:var(--muted)">(fin de frase)</span>` : "") : `<span class="mono" style="color:var(--muted)">La frase aparecerá aquí…</span>`;
+      const d = dist();
+      $("#mh").textContent = d.prev === START ? "¿Con qué palabra suelen empezar las frases?" : `Después de «${d.prev}», ¿qué viene?`;
+      $("#mp").innerHTML = finished ? `<p class="hint">Frase terminada. Pulsa «Empezar de nuevo».</p>` :
+        d.list.map(([w, p, c]) => `<div class="prob ${w === lastPick ? "picked" : ""}"><span>${esc(w === END ? "(fin)" : w)}</span><div class="track"><div class="fill" style="width:${(p * 100).toFixed(1)}%"></div></div><span class="pct">${Math.round(p * 100)} %</span></div>`).join("") || `<p class="hint">Esta palabra no aparece seguida de nada en el entrenamiento.</p>`;
+      $("#mg").disabled = finished || !d.list.length;
+    };
+    const step = () => {
+      const d = dist(); let r = Math.random(), pick = d.list[d.list.length - 1][0];
+      for (const [w, p] of d.list) { if ((r -= p) <= 0) { pick = w; break; } }
+      sent.push(pick); lastPick = null; render();
+      const shown = pick === END ? "el final de la frase" : `«${pick}»`;
+      $("#mn").innerHTML = `Ha elegido ${shown} con un ${Math.round(d.list.find(x => x[0] === pick)[1] * 100)} % de probabilidad. No ha «pensado» la respuesta: ha tirado un dado con esas probabilidades.`;
+    };
+    $("#mg").addEventListener("click", step);
+    $("#mr").addEventListener("click", () => { sent = []; render(); $("#mn").textContent = "Frase nueva. Con la misma entrada, cada vez puede salir algo distinto: eso es el muestreo."; });
+    $("#ma").addEventListener("click", () => { const v = $("#mi").value.trim(); if (!v) return; corpus.push(v); $("#mi").value = ""; train(); sent = []; render(); $("#mn").textContent = "Reentrenado. Fíjate en cómo han cambiado las probabilidades."; });
+    $("#mi").addEventListener("keydown", e => { if (e.key === "Enter") $("#ma").click(); });
+    $("#mt").addEventListener("input", e => { temp = +e.target.value; $("#mtv").textContent = temp.toFixed(1); render();
+      $("#mn").textContent = temp < 0.8 ? "Temperatura baja: la palabra más probable gana casi siempre. Más predecible, más repetitivo." : temp > 1.4 ? "Temperatura alta: las opciones raras ganan peso. Más variado, pero más riesgo de salir del camino." : "Temperatura 1: se usan las probabilidades tal como salen del recuento."; });
+    $("#mk").addEventListener("input", e => { topk = +e.target.value; $("#mkv").textContent = topk ? topk : "todas"; render();
+      $("#mn").textContent = topk ? `Top-k = ${topk}: solo puede elegir entre las ${topk} palabras más probables.` : "Top-k desactivado: puede elegir cualquier palabra vista."; });
+    train(); render();
+  }
+
+  function wMarkovCompare(el) {
+    el.innerHTML = `<div class="grid2">
+      <div class="card"><h3>Cadena de Markov</h3><p>Mira solo la palabra anterior. Las probabilidades salen de contar.</p></div>
+      <div class="card"><h3>Modelo de lenguaje (como Claude)</h3><p>Mira todo el texto que tiene delante (la ventana de contexto) y calcula las probabilidades con una red neuronal enorme.</p></div>
+    </div>
+    <div class="out cap">En lo que se parecen: los dos acaban <b>muestreando de una distribución de probabilidad</b>. Por eso un LLM escribe con fluidez y por eso a veces se inventa cosas. La técnica de predecir la siguiente palabra tiene más de un siglo.</div>`;
+  }
+
+  // ---------- Contenido de las lecciones ----------
+  const L = [
+    { id: 1, t: "Introducción", en: "Intro to AI Capabilities and Limitations", slug: "intro-to-ai-capabilities-and-limitations",
+      ideas: [
+        "Las 4D (Delegación, Descripción, Discernimiento y Diligencia) son competencias <b>tuyas</b>. Este curso trata la otra mitad: cómo funciona la máquina.",
+        "La IA generativa tiene 4 propiedades: predicción del siguiente token, conocimiento, memoria de trabajo y dirigibilidad. Cada una es un continuo que va de capacidad a limitación.",
+        "Lo que aprendes aquí dura: los modelos cambian cada mes, pero las propiedades no. La ventana de contexto crecerá, pero seguirá teniendo un borde.",
+        "La mayoría de los fallos reales son dos propiedades chocando. Si sabes nombrar el choque, sabes por qué pasa y qué hacer."
+      ],
+      terms: [["Next Token Prediction", "predicción del siguiente token"], ["Knowledge", "conocimiento"], ["Working Memory", "memoria de trabajo"], ["Steerability", "dirigibilidad"]],
+      widgets: [["Las 4 propiedades y sus choques", wProps], ["Tu ejercicio: mapa de tu uso de la IA", wTasks]],
+      quiz: [
+        { q: "¿Qué describen las 4D?", o: ["Competencias humanas para colaborar con la IA", "Las propiedades internas del modelo", "Los cuatro modelos de Claude"], a: 0, w: "Las 4D son lo que haces tú. Las 4 propiedades son lo que hace la máquina." },
+        { q: "¿Por qué el curso dice que este contenido no caduca?", o: ["Porque los modelos ya no van a cambiar", "Porque las propiedades se mantienen aunque cambien los modelos", "Porque solo habla de Claude"], a: 1, w: "Las fronteras se mueven (más contexto, menos alucinaciones), pero las propiedades siguen siendo las mismas." },
+        { q: "Una cita bibliográfica inventada es el choque de…", o: ["Memoria de trabajo + dirigibilidad", "Predicción del siguiente token + conocimiento", "Conocimiento + memoria de trabajo"], a: 1, w: "El modelo no tiene el dato y aun así predice algo con forma de cita." }
+      ] },
+    { id: 2, t: "Qué entendemos por IA", en: "What We Mean by AI", slug: "what-we-mean-by-ai",
+      ideas: [
+        "La mayoría de la IA que usas no es generativa: filtros de spam, recomendaciones, detección de fraude. Clasifican, ordenan y predicen.",
+        "La IA generativa <b>crea contenido nuevo</b> (texto, imágenes, código), un fragmento (token) cada vez.",
+        "Se crea en dos etapas: preentrenamiento (aprender patrones de muchísimos datos) y ajuste fino (hacerla segura, ética y útil).",
+        "La misma mecánica da la capacidad y la limitación: escribe bien porque predice, y alucina porque predice.",
+        "El objetivo es la <b>confianza calibrada</b>: ni fiarte de todo ni desconfiar de todo. Ubicar tu tarea en cada continuo."
+      ],
+      terms: [["Generative AI", "IA generativa"], ["Pre-training", "preentrenamiento"], ["Fine-tuning", "ajuste fino"], ["Calibrated trust", "confianza calibrada"]],
+      widgets: [["¿Generativa o no?", wSort]],
+      quiz: [
+        { q: "¿Cuál de estas es IA generativa?", o: ["El filtro de spam", "Un asistente que redacta un resumen", "La detección de fraude de tu banco"], a: 1, w: "Solo el asistente produce contenido nuevo. Los otros clasifican o predicen." },
+        { q: "«La IA escribe con fluidez y alucina por la misma razón.» ¿Es cierto?", o: ["Sí, ambas cosas vienen de que es un motor de predicción", "No, son dos sistemas distintos dentro del modelo"], a: 0, w: "Es una de las ideas centrales: capacidad y limitación son la misma propiedad." },
+        { q: "¿Qué significa confianza calibrada?", o: ["Confiar siempre en la IA", "No confiar nunca en la IA", "Ubicar cada tarea en el continuo de cada propiedad y decidir cuánto revisar"], a: 2, w: "Ni conceder ni retirar la confianza en bloque." }
+      ] },
+    { id: 3, t: "Cómo la IA adquiere su carácter", en: "How AI Gets Its Character", slug: "how-ai-gets-its-character",
+      ideas: [
+        "<b>Preentrenamiento</b>: el modelo aprende una sola cosa, «dado todo lo anterior, adivina lo que viene». Resultado: un completador de documentos, sin idea de ayudarte.",
+        "<b>Ajuste fino</b>: se vuelve a entrenar con ejemplos de buen comportamiento y preferencias humanas. Eso lo convierte en asistente.",
+        "Como se basa en juicios humanos, deja 4 huellas: complacencia, verbosidad, exceso de cautela y confianza mal calibrada.",
+        "Aparecen en todos los modelos; lo que cambia es cómo. Saber nombrarlas te da el control: si cede en cuanto le llevas la contraria, es complacencia."
+      ],
+      terms: [["Sycophancy", "complacencia"], ["Verbosity", "verbosidad"], ["Over-caution", "exceso de cautela"], ["Confidence calibration", "calibración de la confianza"], ["Document completer", "completador de documentos"]],
+      widgets: [["La misma pregunta en cada etapa", wStages], ["Detecta la huella", wFingerprints]],
+      quiz: [
+        { q: "Un modelo solo preentrenado recibe «¿Cuál es la capital de Francia?». ¿Qué hace?", o: ["Responde «París» y se para", "Continúa el documento, por ejemplo con más preguntas", "Se niega a responder"], a: 1, w: "Sin ajuste fino no sabe que le estás pidiendo algo: solo continúa el texto." },
+        { q: "Le dices «creo que te equivocas» y cambia de opinión sin ninguna razón nueva. ¿Qué huella es?", o: ["Verbosidad", "Exceso de cautela", "Complacencia"], a: 2, w: "Ceder ante una presión ligera, aunque tuviera razón, es complacencia (sycophancy)." },
+        { q: "¿De dónde salen estas huellas?", o: ["De errores de programación de un modelo concreto", "De los juicios humanos usados en el ajuste fino", "De la falta de datos en el preentrenamiento"], a: 1, w: "Las preferencias de las personas que evalúan dejan su textura en la personalidad del modelo." }
+      ] },
+    { id: 4, t: "Predicción del siguiente token", en: "Next Token Prediction", slug: "next-token-prediction",
+      ideas: [
+        "La IA generativa se parece más a un <b>autocompletado muy sofisticado</b> que a un buscador. Compone la respuesta palabra a palabra según lo que suele venir después.",
+        "Zona de capacidad: tareas muy vistas (resumir, reformatear, explicar conceptos comunes, redactar en un estilo conocido).",
+        "Zona de limitación: temas raros o nuevos, y todo lo que exige distinguir «verdadero» de «suena verdadero».",
+        "La invención se concentra en lo <b>específico</b>: nombres, fechas, cifras, citas, URLs. Un tono seguro no indica que sea correcto.",
+        "Por eso existen citas y fuentes, avisos de incertidumbre, generación restringida y bucles generador-verificador. Conecta con el <b>Discernimiento</b> de las 4D."
+      ],
+      terms: [["Hallucination", "alucinación"], ["Well-worn path", "camino trillado"], ["Specificity", "especificidad"], ["Generator-verifier loop", "bucle generador-verificador"], ["Discernment", "discernimiento"]],
+      widgets: [["¿Cuánto revisarías?", wContinuum], ["Caza los datos que hay que comprobar", wHunt]],
+      quiz: [
+        { q: "La IA generativa se parece más a…", o: ["Un buscador que consulta una base de datos", "Un autocompletado muy sofisticado", "Una calculadora"], a: 1, w: "Salvo que le actives una fuente externa, no busca: genera." },
+        { q: "¿Dónde se concentra la invención?", o: ["En las ideas generales", "En el tono", "En nombres, fechas, cifras, citas y URLs"], a: 2, w: "Cuanto más preciso es un dato, más merece una comprobación." },
+        { q: "Una respuesta muy segura y bien escrita…", o: ["Suele ser correcta", "No dice nada sobre si es correcta", "Siempre es inventada"], a: 1, w: "Fluidez y exactitud son variables independientes." }
+      ] },
+    { id: 5, t: "Pruébalo: predicción del siguiente token", en: "Try It Out: Next Token Prediction", slug: "try-it-out",
+      ideas: [
+        "En esta lección se construye un predictor de texto muy simple (una cadena de Markov) para ver la predicción por dentro.",
+        "El modelo cuenta qué palabra sigue a cuál en sus frases de entrenamiento y elige la siguiente al azar según esas probabilidades.",
+        "La <b>temperatura</b>, el <b>top-k</b> y el <b>top-p</b> controlan cómo se elige entre las opciones: más predecible o más variado.",
+        "Un LLM hace lo mismo al final (muestrea de una distribución), pero calcula esas probabilidades mirando muchísimo más contexto."
+      ],
+      terms: [["Markov chain", "cadena de Markov"], ["Sampling", "muestreo"], ["Temperature", "temperatura"], ["Top-k / Top-p", "las k más probables / probabilidad acumulada p"]],
+      widgets: [["Simulador: tu propio mini modelo de lenguaje", wMarkov], ["Markov frente a un LLM", wMarkovCompare]],
+      quiz: [
+        { q: "¿En qué se fija la cadena de Markov para elegir la siguiente palabra?", o: ["En toda la conversación", "Solo en la palabra anterior", "En internet"], a: 1, w: "Por eso sus frases se pierden enseguida. Un LLM mira mucho más contexto." },
+        { q: "Si subes la temperatura…", o: ["Siempre elige la palabra más probable", "Las palabras poco probables ganan peso", "El modelo aprende más rápido"], a: 1, w: "Más temperatura, más variedad y más riesgo de salirse del camino." },
+        { q: "¿En qué se parecen una cadena de Markov y Claude?", o: ["Usan la misma red neuronal", "Los dos muestrean la siguiente palabra de una distribución de probabilidad", "Los dos buscan en una base de datos"], a: 1, w: "El último paso es el mismo. Lo que cambia es cómo se calcula la distribución." }
+      ] },
+    { id: 6, t: "Conocimiento", en: "Knowledge", slug: "knowledge" },
+    { id: 7, t: "Pruébalo: conocimiento", en: "Try It Out: Knowledge", slug: "try-it-out-31vzkl2dgi907" },
+    { id: 8, t: "Memoria de trabajo", en: "Working Memory", slug: "working-memory" },
+    { id: 9, t: "Pruébalo: memoria de trabajo", en: "Try It Out: Working Memory", slug: "try-it-out-q7hdjm9twcbt" },
+    { id: 10, t: "Dirigibilidad", en: "Steerability", slug: "steerability" },
+    { id: 11, t: "Pruébalo: dirigibilidad", en: "Try It Out: Steerability", slug: "try-it-out-y02xgkpa6wa7" },
+    { id: 12, t: "Cuando las propiedades chocan", en: "When Properties Collide", slug: "when-properties-collide" },
+    { id: 13, t: "Próximos pasos", en: "Next Steps", slug: "next-steps" },
+    { id: 14, t: "Examen del curso", en: "Course Quiz", slug: "course-quiz" }
+  ];
+
+  // ---------- Render ----------
+  const nav = document.getElementById("nav"), main = document.getElementById("main");
+
+  function progress() {
+    const n = Object.keys(done).filter(k => done[k]).length;
+    document.getElementById("progLbl").textContent = `${n} de ${L.length} lecciones completadas`;
+    document.getElementById("progBar").style.width = (n / L.length * 100) + "%";
+  }
+
+  function renderNav(cur) {
+    nav.innerHTML = L.map(l => `
+      <button data-id="${l.id}" class="${l.ideas ? "" : "locked"}" aria-current="${l.id === cur}">
+        <span class="n">${String(l.id).padStart(2, "0")}</span><span class="t">${l.t}</span>
+        <span class="s">${done[l.id] ? "✓" : l.ideas ? "" : "·"}</span>
+      </button>`).join("");
+  }
+  nav.addEventListener("click", e => { const b = e.target.closest("button"); if (b) location.hash = "l" + b.dataset.id; });
+
+  function renderQuiz(el, l) {
+    const state = l.quiz.map(() => false);
+    el.innerHTML = `<h3>Mini test</h3><p class="hint">Si fallas, lee la explicación y vuelve a intentarlo. Al acertar las tres, la lección queda completada.</p>` +
+      l.quiz.map((q, i) => `<div class="q" data-i="${i}"><b>${i + 1}. ${q.q}</b><div class="opts">${q.o.map((o, j) => `<button class="chip" data-j="${j}">${o}</button>`).join("")}</div><p class="hint" hidden></p></div>`).join("") +
+      `<div class="done-banner" id="db" ${done[l.id] ? "" : "hidden"}>✓ Lección completada</div>`;
+    el.addEventListener("click", e => {
+      const b = e.target.closest(".opts button"); if (!b) return;
+      const qd = b.closest(".q"), i = +qd.dataset.i, q = l.quiz[i], ok = +b.dataset.j === q.a;
+      qd.querySelectorAll("button").forEach(x => x.classList.remove("right", "wrong"));
+      b.classList.add(ok ? "right" : "wrong");
+      const p = qd.querySelector("p"); p.hidden = false;
+      p.innerHTML = `<span class="${ok ? "tag-ok" : "tag-bad"}">${ok ? "Correcto." : "Todavía no."}</span> ${ok ? q.w : "Piensa en la idea clave de la lección y prueba otra opción."}`;
+      state[i] = ok;
+      if (state.every(Boolean)) { done[l.id] = true; store.set("done", done); el.querySelector("#db").hidden = false; progress(); renderNav(l.id); }
+    });
+  }
+
+  function renderLesson(id) {
+    const l = L.find(x => x.id === id) || L[0];
+    renderNav(l.id);
+    const head = `
+      <section class="panel lesson-head">
+        <span class="eyebrow">Lección ${l.id} de ${L.length}</span>
+        <h2>${l.t}</h2>
+        <span class="en">${l.en}</span>
+        <div class="links"><a href="${BASE + l.slug}" target="_blank" rel="noopener">Abrir la lección original ↗</a></div>
+      </section>`;
+    if (!l.ideas) {
+      main.innerHTML = head + `<section class="panel locked-panel"><h3>Todavía no está preparada</h3>
+        <p class="hint">Esta lección se añadirá cuando llegues a ella en el curso. Pídele a Claude: «Ya he hecho la lección ${l.id}, añádela al laboratorio».</p></section>`;
+      return;
+    }
+    main.innerHTML = head + `
+      <section class="panel"><h3>Ideas clave</h3><ul class="ideas">${l.ideas.map(i => `<li>${i}</li>`).join("")}</ul>
+        <span class="eyebrow">Vocabulario en inglés (el examen está en inglés)</span>
+        <div class="terms">${l.terms.map(t => `<span class="term"><b>${t[0]}</b> · ${t[1]}</span>`).join("")}</div>
+      </section>` +
+      l.widgets.map((w, i) => `<section class="panel"><span class="eyebrow">Practica</span><h3>${w[0]}</h3><div id="w${i}" style="display:flex;flex-direction:column;gap:12px"></div></section>`).join("") +
+      `<section class="panel" id="quiz"></section>
+      <div class="chips">${l.id > 1 ? `<button class="btn ghost" data-go="${l.id - 1}">← Lección anterior</button>` : ""}${l.id < L.length ? `<button class="btn" data-go="${l.id + 1}">Lección siguiente →</button>` : ""}</div>`;
+    l.widgets.forEach((w, i) => w[1](main.querySelector("#w" + i)));
+    renderQuiz(main.querySelector("#quiz"), l);
+  }
+  main.addEventListener("click", e => { const b = e.target.closest("[data-go]"); if (b) { location.hash = "l" + b.dataset.go; window.scrollTo(0, 0); } });
+
+  const route = () => { const m = /^#l(\d+)$/.exec(location.hash); renderLesson(m ? +m[1] : (store.get("last", 1))); if (m) store.set("last", +m[1]); };
+  window.addEventListener("hashchange", route);
+  progress(); route();
+})();
+</script>
