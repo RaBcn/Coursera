@@ -211,7 +211,28 @@ textarea { min-height: 110px; resize: vertical; }
 .done-banner { display: flex; gap: 10px; align-items: center; font-weight: 700; color: var(--ok); }
 .score { font-family: var(--font-display); font-size: 2rem; font-weight: 700; }
 
+/* Cursos y ruta */
+.ctabs { display: flex; gap: 8px; flex-wrap: wrap; }
+.ctab { border: 1.5px solid var(--line); background: var(--surface); border-radius: 99px; padding: 7px 14px; font-size: .9rem; display: flex; gap: 8px; align-items: center; }
+.ctab .k { font-family: var(--font-mono); font-size: .72rem; color: var(--muted); }
+.ctab[aria-current="true"] { border-color: var(--cap); background: var(--cap-soft); font-weight: 700; }
+.route-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 14px; }
+.ccard { border: 1px solid var(--line); border-radius: 12px; padding: 16px; display: flex; flex-direction: column; gap: 10px; background: var(--bg); min-width: 0; }
+.minibar { height: 8px; background: var(--line); border-radius: 99px; overflow: hidden; }
+.minibar i { display: block; height: 100%; background: var(--cap); }
+.pill { font-family: var(--font-mono); font-size: .72rem; padding: 2px 9px; border-radius: 99px; border: 1px solid var(--line); color: var(--muted); align-self: flex-start; }
+.pill.done { color: var(--ok); border-color: var(--ok); }
+.pill.prog { color: var(--cap); border-color: var(--cap); }
+.doms { display: flex; flex-direction: column; gap: 8px; }
+.dom { display: grid; grid-template-columns: minmax(0, 1fr) minmax(80px, 160px) 44px; gap: 10px; align-items: center; font-size: .92rem; }
+.dom .track { height: 12px; background: var(--bg); border: 1px solid var(--line); border-radius: 4px; overflow: hidden; }
+.dom .fill { height: 100%; background: var(--lim); }
+.dom .pct { font-family: var(--font-mono); text-align: right; font-variant-numeric: tabular-nums; }
+.objs { margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 4px; max-width: 72ch; }
+
 @media (max-width: 820px) {
+  .ctabs { flex-wrap: nowrap; overflow-x: auto; padding-bottom: 4px; }
+  .ctab { flex: 0 0 auto; }
   .layout { grid-template-columns: minmax(0, 1fr); }
   nav.lessons { position: static; flex-direction: row; overflow-x: auto; gap: 6px; padding-bottom: 6px; }
   nav.lessons button { grid-template-columns: auto auto; flex: 0 0 auto; background: var(--surface); border: 1px solid var(--line); }
@@ -232,9 +253,9 @@ textarea { min-height: 110px; resize: vertical; }
 <div class="wrap">
   <header class="top">
     <div>
-      <div class="eyebrow">Curso · AI capabilities and limitations</div>
+      <div class="eyebrow">Certificación · Claude Certified Associate – Foundations</div>
       <h1>Laboratorio de IA</h1>
-      <p class="sub">Cada lección del curso, resumida en español, con ejercicios para tocar los conceptos, una ficha para el examen y un tutor al que preguntarle dudas.</p>
+      <p class="sub">Los cursos de la certificación Claude Certified Associate, lección a lección, en español: resumen, ejercicios para tocar los conceptos, ficha de examen y un tutor al que preguntar dudas.</p>
     </div>
     <div class="top-right">
       <div class="progress" aria-live="polite">
@@ -244,6 +265,8 @@ textarea { min-height: 110px; resize: vertical; }
       <button class="btn ghost" id="goFichas">Ver todas las fichas de examen</button>
     </div>
   </header>
+
+  <div class="ctabs" id="ctabs" role="tablist" aria-label="Cursos de la certificación"></div>
 
   <div class="layout">
     <nav class="lessons" id="nav" aria-label="Lecciones"></nav>
@@ -669,8 +692,7 @@ textarea { min-height: 110px; resize: vertical; }
   }
 
   // L14: examen de práctica
-  function wExam(el) {
-    const QS = [
+  const EXAM_CAP = [
       ["How does a generative AI model produce its answers?", ["It looks up the answer in a database", "It predicts what comes next, one token at a time", "It copies the most similar document it has stored"], 1, "Predicción del siguiente token: genera, no busca."],
       ["A pre-trained model that has NOT been fine-tuned is best described as…", ["A helpful assistant", "A document completer", "A search engine"], 1, "Sin ajuste fino solo continúa documentos."],
       ["You push back and the model abandons a correct answer. Which fingerprint is this?", ["Verbosity", "Over-caution", "Sycophancy"], 2, "Complacencia: cede ante una presión ligera."],
@@ -685,7 +707,8 @@ textarea { min-height: 110px; resize: vertical; }
       ["A model gives a convincing citation for a paper that does not exist. Which two properties collided?", ["Next Token Prediction + Knowledge", "Working Memory + Steerability", "Knowledge + Working Memory"], 0, "Generar algo con forma de cita sobre un hueco de conocimiento."],
       ["After 30 messages the model ignores constraints you set at the start. Best response?", ["Assume the model is broken", "Re-supply the key context or start a fresh chat with essentials up front", "Raise the temperature"], 1, "Memoria de trabajo + dirigibilidad: vuelve a darle el contexto."],
       ["What does calibrated trust mean?", ["Trusting AI for everything", "Never trusting AI", "Locating each task on each property's continuum and adjusting verification"], 2, "Ni confiar ni desconfiar en bloque."]
-    ];
+  ];
+  function wExam(QS) { return el => {
     const ans = new Array(QS.length).fill(null);
     el.innerHTML = `<p class="hint">Examen de práctica escrito por el laboratorio, en inglés como el oficial. <b>No son las preguntas del examen real</b>, pero cubren todo el temario. Tras responder verás la explicación en español.</p>` +
       QS.map((q, i) => `<div class="q" data-i="${i}"><b>${i + 1}. ${esc(q[0])}</b><div class="opts">${q[1].map((o, j) => `<button class="chip" data-j="${j}">${esc(o)}</button>`).join("")}</div><p class="hint" hidden></p></div>`).join("") +
@@ -702,13 +725,14 @@ textarea { min-height: 110px; resize: vertical; }
     function upd() {
       const n = ans.filter(a => a !== null).length, s = ans.filter(a => a === true).length, xs = el.querySelector("#xs");
       if (n < QS.length) { xs.className = "out"; xs.textContent = `Respondidas: ${n} de ${QS.length} · aciertos: ${s}`; return; }
-      xs.className = s >= 11 ? "out good" : "out warn";
-      xs.innerHTML = `<div class="score">${s} / ${QS.length}</div>${s >= 11 ? "Muy bien preparado. Repasa las fichas de lo que hayas fallado y adelante con el examen oficial." : "Repasa las fichas de las preguntas falladas y vuelve a intentarlo."}`;
+      const pass = Math.ceil(QS.length * 0.8);
+      xs.className = s >= pass ? "out good" : "out warn";
+      xs.innerHTML = `<div class="score">${s} / ${QS.length}</div>${s >= pass ? "Muy bien preparado. Repasa las fichas de lo que hayas fallado y adelante con el examen oficial." : "Repasa las fichas de las preguntas falladas y vuelve a intentarlo."}`;
     }
-  }
+  }; }
 
   // ============ Contenido ============
-  const L = [
+  const CAP = [
     { id: 1, t: "Introducción", en: "Intro to AI Capabilities and Limitations", slug: "intro-to-ai-capabilities-and-limitations",
       ideas: [
         "Las 4D (Delegación, Descripción, Discernimiento y Diligencia) son competencias <b>tuyas</b>. Este curso trata la otra mitad: cómo funciona la máquina.",
@@ -997,18 +1021,479 @@ textarea { min-height: 110px; resize: vertical; }
       terms: [["Capability zone", "zona de capacidad"], ["Limitation zone", "zona de limitación"], ["Continuum", "continuo"]],
       ficha: [["Estructura", "2 etapas (pre-training, fine-tuning) + 4 huellas + 4 propiedades + choques."], ["Para cada propiedad", "Pregunta clave, capacidad, limitación, fallos típicos, mitigaciones, conexión 4D."], ["Truco", "Si dudas, piensa: ¿qué propiedad y en qué punto del continuo?"]],
       recuerda: "Repasa las fichas y practica con tus propias tareas.",
-      widgets: [["Examen de práctica (en inglés)", wExam]],
+      widgets: [["Examen de práctica (en inglés)", wExam(EXAM_CAP)]],
       quiz: null }
   ];
 
-  // ============ Tutor con Claude ============
-  const chats = store.get("chats", {});
-  function lessonContext(l) {
-    return `Lección ${l.id}: ${l.t} (${l.en})\nIdeas clave:\n- ${l.ideas.map(strip).join("\n- ")}\nFicha:\n${l.ficha.map(f => `${f[0]}: ${f[1]}`).join("\n")}\nVocabulario: ${l.terms.map(t => `${t[0]} = ${t[1]}`).join("; ")}`;
-  }
   const md = s => esc(s).replace(/\*\*(.+?)\*\*/g, "<b>$1</b>");
 
-  function renderChat(el, l) {
+  // ============ Widget: constructor de prompts (Claude 101) ============
+  function wPromptBuilder(el) {
+    const P = [["pb1", "1 · Prepara el escenario", "Tu rol, tu objetivo y el contexto que Claude debe saber.", "Soy responsable de operaciones en una empresa de logística de 40 personas y preparo la reunión mensual con dirección."],
+               ["pb2", "2 · Define la tarea", "Qué acción quieres: escribir, analizar, resumir, crear…", "Resume las incidencias de entregas de octubre a partir del Excel adjunto y propón tres mejoras."],
+               ["pb3", "3 · Especifica las reglas", "Formato, tono, longitud, ejemplos.", "Máximo una página, con viñetas, tono directo y sin tecnicismos. Termina con una tabla de las tres mejoras con coste estimado."]];
+    const saved = store.get("pb", {});
+    el.innerHTML = `<p class="hint">Escribe tu propio prompt con las tres partes que enseña la lección. Puedes partir del ejemplo de los recuadros.</p>` +
+      P.map(p => `<div class="wbody" style="gap:6px"><label for="${p[0]}"><b>${p[1]}</b> <span class="hint">${p[2]}</span></label><textarea id="${p[0]}" style="min-height:70px" placeholder="${esc(p[3])}"></textarea></div>`).join("") +
+      `<div class="card"><span class="eyebrow">Tu prompt completo</span><div class="quote" id="pbo"></div><div class="chips" id="pbc"></div></div>
+      <div class="chips"><button class="btn ghost" id="pbex">Usar el ejemplo</button><button class="btn ghost" id="pbcopy">Copiar el prompt</button><button class="btn" id="pbai" hidden>Pedir a Claude que lo evalúe</button></div>
+      <div class="out" id="pbr" hidden></div>`;
+    const $ = s => el.querySelector(s);
+    P.forEach(p => { $("#" + p[0]).value = saved[p[0]] || ""; });
+    const full = () => P.map(p => $("#" + p[0]).value.trim()).filter(Boolean).join("\n\n");
+    const upd = () => {
+      const v = {}; P.forEach(p => { v[p[0]] = $("#" + p[0]).value; }); store.set("pb", v);
+      $("#pbo").textContent = full() || "Escribe en los recuadros de arriba…";
+      $("#pbc").innerHTML = P.map(p => { const ok = $("#" + p[0]).value.trim().length > 15; return `<span class="pill ${ok ? "done" : ""}">${ok ? "✓" : "·"} ${p[1].slice(4)}</span>`; }).join("");
+    };
+    el.addEventListener("input", upd);
+    $("#pbex").addEventListener("click", () => { P.forEach(p => { $("#" + p[0]).value = p[3]; }); upd(); });
+    $("#pbcopy").addEventListener("click", () => {
+      const t = full(); if (!t) return;
+      const b = $("#pbcopy");
+      if (navigator.clipboard) navigator.clipboard.writeText(t).then(() => { b.textContent = "Copiado"; }).catch(() => { const r = document.createRange(); r.selectNodeContents($("#pbo")); getSelection().removeAllRanges(); getSelection().addRange(r); b.textContent = "Selecciónalo y cópialo"; });
+    });
+    sampleReady.then(s => { if (s) $("#pbai").hidden = false; });
+    $("#pbai").addEventListener("click", async () => {
+      const t = full(); const out = $("#pbr");
+      if (!t || !sampleFn) return;
+      out.hidden = false; out.className = "out"; out.textContent = "Claude está leyendo tu prompt…"; $("#pbai").disabled = true;
+      try {
+        await sampleFn(`Eres un profesor del curso Claude 101. Evalúa este prompt de una persona que está aprendiendo, según las tres partes de la lección: preparar el escenario (rol, objetivo, contexto), definir la tarea y especificar las reglas (formato, tono, longitud, ejemplos). Responde en español, en menos de 150 palabras: una línea por parte con ✓ o ✗ y por qué, y al final una versión mejorada del prompt. No ejecutes la tarea del prompt.\n\nPROMPT:\n${t}`, {
+          onText: ({ text }) => { out.className = "out cap"; out.innerHTML = md(text); }
+        });
+      } catch (e) {
+        out.className = "out warn";
+        out.textContent = e && e.code === "rate_limited" ? "Demasiadas peticiones seguidas. Espera un poco." : (e && (e.code === "not_granted" || e.code === "sampling_disabled")) ? "No hay permiso para usar Claude desde esta página." : "No se pudo evaluar. Inténtalo de nuevo.";
+      } finally { $("#pbai").disabled = false; }
+    });
+    upd();
+  }
+
+  // ============ Claude 101 ============
+  const C101 = [
+    { id: 1, t: "¿Qué es Claude?", en: "What is Claude?", slug: "what-is-claude",
+      ideas: [
+        "Claude es un asistente de IA para la vida y el trabajo, guiado por principios: evitar respuestas tóxicas o discriminatorias, no ayudar en actividades ilegales o poco éticas y comportarse de forma segura y beneficiosa. Este enfoque se llama <b>IA Constitucional</b>.",
+        "Es más que un chatbot: un <b>compañero de pensamiento</b>. Destaca en escritura, investigación y análisis, programación, razonamiento y aprendizaje.",
+        "Su ventana de contexto admite más de 200.000 tokens (unas 500 páginas), y hasta 1 millón en planes de pago con modelos compatibles. Puede responder al momento o pensar antes (<b>Thinking</b>). El <b>modo aprendizaje</b> te guía en vez de darte la respuesta.",
+        "Es dirigible: acepta indicaciones de personalidad, tono y comportamiento.",
+        "Está en web, escritorio y móvil, en todos los planes (Free, Pro, Max, Team y Enterprise), y todo se sincroniza. También hay Claude Code, Claude Tag (Slack), Claude Design y Claude for Microsoft 365."
+      ],
+      terms: [["Constitutional AI", "IA Constitucional"], ["Thinking partner", "compañero de pensamiento"], ["Context window", "ventana de contexto"], ["Thinking", "razonamiento antes de responder"], ["Learning mode", "modo aprendizaje"]],
+      ficha: [["Qué es", "Asistente de IA y compañero de pensamiento, no un simple chatbot."], ["Principios", "Constitutional AI: seguro, ético, útil y transparente."], ["Capacidades", "Escritura, investigación y análisis (200K+ tokens), código, razonamiento (Thinking), aprendizaje (Learning mode)."], ["Acceso", "Web, escritorio y móvil en todos los planes; todo sincronizado."], ["Otras interfaces", "Claude Code, Claude Tag, Claude Design, Claude for Microsoft 365."]],
+      recuerda: "Buscador para datos sueltos; compañero de pensamiento cuando importa tu situación.",
+      widgets: [["¿Buscador o compañero de pensamiento?", wClassify(
+        { s: "Basta un buscador", p: "Necesita un compañero de pensamiento" },
+        [["s", "¿Cuál es la capital de Australia?", "Es un dato suelto: no depende de tu situación."],
+         ["p", "Ayúdame a decidir cómo contarle a mi equipo que el proyecto se retrasa.", "La respuesta depende de tu equipo, tu proyecto y tu criterio."],
+         ["s", "¿Cuántos habitantes tiene Barcelona?", "Dato público y estable."],
+         ["p", "Revisa mi borrador de propuesta y dime qué le falta para convencer a dirección.", "Depende de tu borrador: hace falta trabajar sobre él."],
+         ["s", "¿Qué significa la sigla KPI?", "Una definición estándar."],
+         ["p", "Con estas notas de la reunión, ¿qué tareas me tocan a mí?", "Depende de tu contexto personal."]],
+        "Lo decisivo no es el tema sino si la respuesta depende de tu situación, tu borrador o tu criterio. Clasifica cada petición.")]],
+      quiz: [
+        { q: "¿Cómo se llama el enfoque con el que se entrena a Claude para alinearlo con valores humanos?", o: ["IA Constitucional", "IA Generativa", "Aprendizaje por refuerzo puro"], a: 0, w: "Constitutional AI." },
+        { q: "¿Cuándo aporta más Claude que un buscador?", o: ["Cuando buscas un dato suelto", "Cuando la respuesta depende de tu contexto o criterio", "Nunca"], a: 1, w: "Es un compañero de pensamiento." },
+        { q: "¿En qué planes está disponible la app de Claude?", o: ["Solo en Enterprise", "Solo en planes de pago", "En todos: Free, Pro, Max, Team y Enterprise"], a: 2, w: "Y se sincroniza entre dispositivos." }
+      ] },
+    { id: 2, t: "Tu primera conversación con Claude", en: "Your first conversation with Claude", slug: "your-first-conversation-with-claude",
+      ideas: [
+        "Háblale como a un compañero de trabajo: natural, conciso y conversacional. Claude pone la inteligencia; tú, el contexto y la experiencia.",
+        "Un buen prompt tiene tres partes: <b>preparar el escenario</b> (tu rol, objetivo, contexto), <b>definir la tarea</b> (qué acción) y <b>especificar las reglas</b> (estilo, tono, formato, ejemplos). Viene de la Descripción del marco 4D.",
+        "Añade contexto: sube archivos (PDF, DOCX, CSV, TXT, imágenes), activa herramientas como la búsqueda web o Google Drive y elige modelo: <b>Opus</b> para lo más complejo, <b>Sonnet</b> como opción por defecto. El razonamiento extendido ayuda en lo difícil pero tarda más.",
+        "Itera: preguntas de seguimiento, feedback concreto, redirigir o empezar un chat nuevo. Con el lápiz puedes editar y reenviar tu mensaje.",
+        "Personaliza: instrucciones para Claude en Ajustes, <b>Memoria</b> (activada por defecto en Free, Pro y Max; en Team y Enterprise la activa la organización) y <b>Skills</b>."
+      ],
+      terms: [["Setting the stage", "preparar el escenario"], ["Defining the task", "definir la tarea"], ["Specifying rules", "especificar las reglas"], ["Extended thinking", "razonamiento extendido"], ["Memory", "memoria"]],
+      ficha: [["Estilo", "Como a un compañero: natural, conciso, conversacional."], ["Prompt en 3 partes", "Setting the stage · Defining the task · Specifying rules."], ["Más contexto", "Archivos, herramientas (web, Drive), modelo (Opus complejo, Sonnet por defecto), extended thinking."], ["Iterar", "Seguimiento, feedback concreto, redirigir, chat nuevo, editar con el lápiz."], ["Personalizar", "Instrucciones en Ajustes, Memory, Skills."]],
+      recuerda: "Escenario + tarea + reglas. Y luego, iterar.",
+      widgets: [["Construye tu prompt", wPromptBuilder], ["¿Qué parte del prompt es?", wClassify(
+        { st: "Escenario", ta: "Tarea", ru: "Reglas" },
+        [["st", "«Soy la responsable de marketing de una startup de streaming y preparamos la presentación para inversores.»", "Rol, contexto y objetivo."],
+         ["ta", "«Investiga el mercado del cine independiente en streaming: tendencias, competidores y oportunidades.»", "La acción que quieres."],
+         ["ru", "«Usa búsqueda web con citas y estructúralo como informe de 5 páginas con resumen ejecutivo.»", "Formato y fuentes."],
+         ["ru", "«Tono cercano y sin tecnicismos, como en el ejemplo que te adjunto.»", "Tono y ejemplo."],
+         ["ta", "«Escribe un correo al cliente explicando el retraso.»", "La acción."]],
+        "El ejemplo de la lección, troceado. Elige a qué parte pertenece cada frase.")]],
+      quiz: [
+        { q: "¿Cuáles son las tres partes de un buen prompt según la lección?", o: ["Saludo, pregunta y despedida", "Preparar el escenario, definir la tarea y especificar las reglas", "Modelo, temperatura y longitud"], a: 1, w: "Setting the stage, defining the task, specifying rules." },
+        { q: "¿Qué modelo recomienda la lección como opción por defecto?", o: ["Sonnet", "Opus", "Haiku"], a: 0, w: "Opus para las tareas más complejas." },
+        { q: "La primera respuesta no es lo que querías. ¿Qué haces?", o: ["Rendirte", "Iterar: seguimiento, feedback concreto o un chat nuevo", "Copiar la respuesta tal cual"], a: 1, w: "El valor está en la conversación continuada." }
+      ] },
+    { id: 3, t: "Mejores resultados", en: "Getting better results", slug: "getting-better-results",
+      ideas: [
+        "Problemas típicos: respuesta genérica (falta contexto), longitud equivocada (Claude adivina), formato incorrecto (enséñale un ejemplo), datos seguros pero falsos (verifica, pide fuentes, activa la búsqueda) y tono equivocado (descríbelo o da un ejemplo).",
+        "<b>Mentalidad de iteración</b>: el primer resultado es un borrador. Da feedback específico («quita los dos primeros párrafos») y empieza de cero si la conversación se ha torcido.",
+        "<b>AI Fluency</b> son cuatro competencias: Delegación, Descripción, Discernimiento y Diligencia.",
+        "<b>Evals</b>: prueba a Claude con tus tareas reales. Reúne de 5 a 10 ejemplos, crea prompts de prueba, compara resultados y refina.",
+        "Ejemplo de Rio: repite un análisis que ya hiciste a mano y compara. Si Claude llega al mismo resultado, puedes delegarlo con confianza. Validar da confianza, pero la responsabilidad sigue siendo tuya."
+      ],
+      terms: [["Evals", "evaluaciones"], ["Iteration mindset", "mentalidad de iteración"], ["Delegation · Description · Discernment · Diligence", "las 4D"], ["Delegation-diligence loop", "bucle delegación-diligencia"]],
+      ficha: [["Genérico", "→ más contexto (público, rol, restricciones)."], ["Longitud", "→ dila explícitamente."], ["Formato", "→ muestra un ejemplo."], ["Dato falso seguro", "→ verifica, pide fuentes, búsqueda web."], ["Tono", "→ descríbelo o da un ejemplo."], ["Evals", "5-10 ejemplos → prompts de prueba → comparar → refinar."]],
+      recuerda: "Prueba con datos que ya conoces antes de delegar lo nuevo.",
+      widgets: [["¿Qué lo arregla?", wClassify(
+        { ctx: "Añadir contexto", len: "Decir la longitud", fmt: "Mostrar el formato", ver: "Verificar y usar fuentes", tone: "Describir el tono" },
+        [["ctx", "Pides «escribe un correo sobre el retraso del proyecto» y sale un texto que valdría para cualquier empresa.", "Faltan público, situación y restricciones."],
+         ["len", "Querías un párrafo y llegan tres páginas.", "Claude adivina la longitud si no se la dices."],
+         ["fmt", "Querías viñetas con títulos en negrita y llega texto corrido.", "Enséñale, no solo le digas."],
+         ["ver", "Te da una cifra de mercado con total seguridad y resulta ser falsa.", "En lo importante, verifica y activa la búsqueda web."],
+         ["tone", "El mensaje para tu equipo suena demasiado formal.", "Describe el tono que quieres o da un ejemplo."]],
+        "Cada caso es uno de los problemas típicos de la lección. Elige el arreglo.")],
+        ["Tu ejercicio: una eval sencilla", wNote("eval101", "Elige una tarea que repites a menudo. Apunta de 5 a 10 ejemplos que ya tengas hechos y cómo vas a comparar el resultado de Claude con el tuyo.", "Ej.: informe semanal de ventas. Tengo los de las últimas 6 semanas. Compararé cifras, tono y si detecta lo mismo que yo.")]],
+      quiz: [
+        { q: "Claude te da una respuesta demasiado genérica. ¿La causa más probable?", o: ["Al prompt le falta contexto", "El modelo es malo", "Has escrito demasiado"], a: 0, w: "Añade público, rol y restricciones." },
+        { q: "¿Qué es una eval en esta lección?", o: ["Un examen oficial", "Una forma sistemática de probar a Claude en tus tareas reales", "Una función de pago"], a: 1, w: "Comparar con ejemplos que ya conoces." },
+        { q: "Si Claude reproduce bien tu análisis, ¿quién responde del resultado final?", o: ["Claude", "Anthropic", "Tú"], a: 2, w: "Validar da confianza, no quita responsabilidad." }
+      ] },
+    { id: 4, t: "Cómo trabajarás con Claude en el escritorio", en: "How you'll work with Claude on your desktop", slug: "claude-desktop-app-chat-cowork-code",
+      ideas: [
+        "En la app de escritorio el trabajo tiene tres formas. <b>Turno a turno</b> (Chat): pregunta, respuesta, ajuste; el valor está en el intercambio.",
+        "<b>Encargar trabajo</b> (Cowork): describes un resultado y Claude lo planifica, lo hace y te lo entrega. Tú revisas el plan y el resultado.",
+        "<b>Crear software</b> (pestaña Code): Claude trabaja dentro de un proyecto de código. Es para desarrolladores.",
+        "Usa Chat cuando cada respuesta cambia la siguiente pregunta, quieres estar en el proceso o es algo rápido. Tiene acceso rápido (doble Opción en Mac), capturas, dictado y conectores locales.",
+        "Usa Cowork cuando hay varios pasos seguidos, el resultado son archivos en tu carpeta, abarca varias herramientas o debe repetirse. Ofrece acceso a carpetas locales, tareas programadas, subagentes, proyectos, navegador, uso del ordenador (en vista previa) y plugins."
+      ],
+      terms: [["Turn by turn", "turno a turno (Chat)"], ["Handing work off", "encargar trabajo (Cowork)"], ["Scheduled tasks", "tareas programadas"], ["Subagents", "subagentes"], ["Plugins", "paquetes de skills y conectores"]],
+      ficha: [["Chat", "Turno a turno: pensar juntos, preguntas rápidas, borradores."], ["Cowork", "Encargar: varios pasos, archivos en tu carpeta, varias herramientas, tareas programadas."], ["Code", "Crear software en un proyecto de código (local o en la nube)."], ["Regla", "Primero reconoces la forma del trabajo; la pestaña viene después."]],
+      recuerda: "Si lo haces en varios recados seguidos, probablemente es un encargo para Cowork.",
+      widgets: [["¿Chat, Cowork o Code?", wClassify(
+        { chat: "Chat (turno a turno)", cowork: "Cowork (encargar)", code: "Code (software)" },
+        [["chat", "Una lluvia de ideas para el nombre de un producto.", "Cada respuesta te da la siguiente idea."],
+         ["cowork", "Cada lunes, revisar mensajes y preparar un informe de estado.", "Se repite: tarea programada."],
+         ["code", "Corregir un error en el código de la web de la empresa.", "Trabajo dentro de un proyecto de código."],
+         ["cowork", "Leer 50 contratos de una carpeta y dejar un memorando resumen en esa misma carpeta.", "Varios pasos y resultado guardado en tu carpeta."],
+         ["chat", "Entender qué significan las métricas de un panel a partir de una captura.", "Rápido y con preguntas de seguimiento."],
+         ["cowork", "Cruzar notas de reunión, Slack y una hoja de cálculo para actualizar una presentación.", "Abarca varias herramientas."]],
+        "Elige dónde harías cada tarea.")]],
+      quiz: [
+        { q: "Quieres que cada viernes Claude junte tus notas, Slack y una hoja de cálculo en un resumen. ¿Dónde?", o: ["Chat", "Cowork, como tarea programada", "Code"], a: 1, w: "Varias herramientas y repetición." },
+        { q: "¿Qué diferencia concreta tiene Cowork frente a Chat con los archivos?", o: ["Ninguna", "Puede leer una carpeta local y guardar ahí los resultados", "Solo funciona con imágenes"], a: 1, w: "Chat te devuelve descargas." },
+        { q: "Estás pensando en voz alta un esquema de presentación. ¿Qué forma de trabajo es?", o: ["Turno a turno", "Encargar trabajo", "Crear software"], a: 0, w: "El valor está en el intercambio." }
+      ] },
+    { id: 5, t: "Introducción a los proyectos", en: "Introduction to projects", slug: "introduction-to-projects",
+      ideas: [
+        "Un <b>proyecto</b> es un espacio propio con su historial de chats, su base de conocimiento, sus instrucciones y su memoria.",
+        "Úsalo para trabajo continuado: materiales de referencia que reutilizas, requisitos fijos de respuesta o colaboración en equipo.",
+        "Tres pasos: crear (nombre, descripción, visibilidad), escribir las <b>instrucciones</b> (contexto, proceso, tono, requisitos) y montar la <b>base de conocimiento</b> (PDF, DOCX, CSV, Google Drive…).",
+        "Si el conocimiento se acerca al límite de contexto, el proyecto activa <b>RAG</b>: busca y trae solo lo relevante, hasta 10 veces más capacidad. Los chats no comparten contexto entre sí salvo lo que está en el conocimiento del proyecto.",
+        "Permisos (Team y Enterprise): <b>Can view</b> (consultar y chatear), <b>Can edit</b> (cambiar instrucciones y conocimiento, gestionar miembros) y <b>Owner</b> (lo controla todo, incluida la visibilidad). Nombra bien los archivos y mantén el conocimiento al día."
+      ],
+      terms: [["Project knowledge", "conocimiento del proyecto"], ["Project instructions", "instrucciones del proyecto"], ["RAG", "recuperación de lo relevante"], ["Can view / Can edit / Owner", "permisos"]],
+      ficha: [["Qué es", "Espacio con historial, conocimiento, instrucciones y memoria propios."], ["Cuándo", "Referencias reutilizadas, requisitos fijos, trabajo en equipo."], ["Instrucciones", "Se aplican a todos los chats del proyecto."], ["Escala", "RAG automático cerca del límite: hasta 10x de capacidad."], ["Permisos", "Can view · Can edit · Owner."], ["Buenas prácticas", "Empezar enfocado, conocimiento al día, nombres descriptivos, citar documentos por nombre."]],
+      recuerda: "Lo que repites en cada chat va al proyecto.",
+      widgets: [["¿Dónde lo pondrías?", wClassify(
+        { k: "Conocimiento del proyecto", i: "Instrucciones del proyecto", c: "Subirlo solo a este chat" },
+        [["k", "La guía de marca que usarás en todos los textos.", "Material de referencia que Claude debe consultar siempre."],
+         ["i", "«Usa siempre un tono formal y termina con una llamada a la acción.»", "Es una norma de comportamiento."],
+         ["c", "Un ejemplo puntual que solo necesitas hoy.", "Así no ensucias la base de conocimiento."],
+         ["i", "«Cuando suba una transcripción, resúmela con esta plantilla.»", "Las instrucciones pueden automatizar un flujo."],
+         ["k", "El informe de investigación de usuarios del trimestre.", "Referencia de fondo para todos los chats."]],
+        "Decide si cada cosa va al conocimiento del proyecto, a sus instrucciones o solo al chat del momento.")],
+        ["¿Qué permiso es?", wClassify(
+        { v: "Can view", e: "Can edit", o: "Owner" },
+        [["v", "Puede consultar y chatear en el proyecto, pero no cambiar nada.", "Solo lectura con derecho a conversación."],
+         ["e", "Puede cambiar las instrucciones y añadir documentos.", "Colaboración completa."],
+         ["o", "Decide con quién se comparte y puede hacerlo visible a toda la organización.", "Quien crea el proyecto lo controla todo."]],
+        "Empareja cada descripción con su nivel de permiso.")]],
+      quiz: [
+        { q: "¿Qué pasa cuando el conocimiento de un proyecto se acerca al límite de contexto?", o: ["Deja de funcionar", "Activa RAG y trae solo lo relevante", "Borra los archivos antiguos"], a: 1, w: "Hasta 10 veces más capacidad." },
+        { q: "¿Los chats de un mismo proyecto comparten lo que se habló en cada uno?", o: ["Sí, siempre", "No, salvo lo que está en el conocimiento del proyecto", "Solo si son del mismo día"], a: 1, w: "Por eso lo importante va al conocimiento." },
+        { q: "¿Qué permiso necesita alguien para modificar las instrucciones?", o: ["Can view", "Can edit", "Ninguno"], a: 1, w: "Can view es solo lectura con chat." }
+      ] },
+    { id: 6, t: "Crear con artifacts", en: "Creating with artifacts", slug: "creating-with-artifacts",
+      ideas: [
+        "Un <b>artifact</b> es algo que creas con Claude y que se sostiene solo: documento, presentación, diseño, panel, prototipo. Aparece en una ventana aparte y se guarda en la pestaña Artifacts. Este laboratorio es un artifact.",
+        "Herramientas dedicadas: <b>Claude Design</b> (trabajo visual, editable en un lienzo), <b>Claude Slides</b> (presentaciones; exporta a PowerPoint, Google Slides o PDF) y <b>Claude Docs</b> (documentos vivos que editáis a la vez). Están en todos los planes; en Team y Enterprise el administrador puede desactivarlas.",
+        "No es lo mismo que la <b>creación de archivos</b>: un artifact se actualiza dentro de Claude y se comparte por enlace; un archivo (.docx, .xlsx, .pptx, PDF) se descarga.",
+        "Se edita de tres formas: directamente, con un comentario o pidiéndoselo a Claude en la conversación.",
+        "Son privados hasta que los compartes. En Pro y Max: solo tú o cualquiera con el enlace. En Team y Enterprise: dentro de la organización, salvo que un Owner active el uso compartido externo."
+      ],
+      terms: [["Artifact", "creación guardada y compartible"], ["Claude Design / Slides / Docs", "diseño / presentaciones / documentos"], ["File creation", "creación de archivos descargables"], ["External sharing", "compartir fuera de la organización"]],
+      ficha: [["Qué es", "Un resultado independiente que se edita, reutiliza y comparte. Vive en la pestaña Artifacts."], ["Tipos", "Design (visual), Slides (presentaciones), Docs (documentos vivos), más páginas interactivas y gráficos."], ["Frente a archivos", "Artifact = dentro de Claude y por enlace; archivo = descarga."], ["Editar", "Directo, comentario o pidiéndolo."], ["Compartir", "Privado por defecto. Team/Enterprise: dentro de la organización salvo External sharing."]],
+      recuerda: "Pide el entregable, no solo el contenido.",
+      widgets: [["¿Qué crearías?", wClassify(
+        { d: "Claude Design", s: "Claude Slides", doc: "Claude Docs", i: "Artifact interactivo", f: "Archivo descargable" },
+        [["d", "La página de inicio de una app con sección principal y lista de funciones.", "Trabajo visual en un lienzo."],
+         ["s", "Cinco diapositivas a partir de las notas de una reunión.", "Una presentación."],
+         ["doc", "Un brief de proyecto que tu equipo editará contigo.", "Documento vivo y colaborativo."],
+         ["i", "Un test interactivo con las veinte palabras de vocabulario de esta lista.", "Una herramienta para usar al momento."],
+         ["f", "Una hoja de Excel con fórmulas para enviar por correo a un proveedor.", "Necesitas el archivo para abrirlo en otra aplicación."]],
+        "Elige la mejor opción para cada petición.")]],
+      quiz: [
+        { q: "¿Dónde se guardan los artifacts?", o: ["Solo en la conversación donde nacieron", "En la pestaña Artifacts", "En tu disco duro"], a: 1, w: "Puedes volver a ellos, editarlos y compartirlos." },
+        { q: "¿En qué se diferencia un artifact de la creación de archivos?", o: ["En nada", "El artifact se actualiza en Claude y se comparte por enlace; el archivo se descarga", "El artifact solo sirve para código"], a: 1, w: "Dos formas de entregar." },
+        { q: "En un plan Team, ¿quién puede abrir un artifact compartido por enlace?", o: ["Cualquiera en internet", "Personas de tu organización, salvo que se active el uso compartido externo", "Nadie"], a: 1, w: "Lo activa un Owner o Primary Owner." }
+      ] },
+    { id: 7, t: "Trabajar con skills", en: "Working with skills", slug: "working-with-skills",
+      ideas: [
+        "Las <b>Skills</b> son carpetas de instrucciones, scripts y recursos que Claude carga cuando las necesita: paquetes de experiencia para hacer una tarea siempre igual de bien.",
+        "Dos tipos: <b>Skills de Anthropic</b> (crear Excel, Word, PowerPoint y PDF; se usan solas) y <b>Skills personalizadas</b> (tus flujos: marca, actas, análisis…).",
+        "Requisito: tener activada la <b>ejecución de código y creación de archivos</b>. Se gestionan en Customize > Skills. Claude elige la skill adecuada sin que se lo pidas.",
+        "Seguridad: pueden contener código, así que instálalas solo de fuentes de confianza y revísalas.",
+        "Se crean conversando con Claude: te entrevista, subes ejemplos y guardas la skill. Regla clave: <b>los proyectos guardan conocimiento; las skills ejecutan tareas</b>. Se complementan."
+      ],
+      terms: [["Skill", "paquete de instrucciones reutilizable"], ["Anthropic Skills / Custom Skills", "de Anthropic / personalizadas"], ["Code execution and file creation", "ejecución de código y creación de archivos"]],
+      ficha: [["Qué son", "Carpetas de instrucciones, scripts y recursos que Claude carga dinámicamente."], ["Tipos", "Anthropic (documentos) y Custom (tus flujos)."], ["Requisito", "Code execution and file creation activado."], ["Seguridad", "Solo de fuentes de confianza; revisar el contenido."], ["Frente a proyectos", "Projects = qué (conocimiento). Skills = cómo (proceso)."]],
+      recuerda: "Los proyectos guardan conocimiento; las skills ejecutan tareas.",
+      widgets: [["¿Proyecto o skill?", wClassify(
+        { p: "Proyecto (conocimiento)", s: "Skill (proceso)" },
+        [["p", "Las fichas de todos tus clientes, para consultarlas.", "Es información de referencia."],
+         ["s", "La metodología paso a paso para el análisis trimestral de desviaciones.", "Es un proceso que se repite igual."],
+         ["p", "Las notas de las reuniones del lanzamiento.", "Contexto de fondo."],
+         ["s", "Aplicar las normas de marca a cualquier presentación.", "Un procedimiento que se aplica cada vez."],
+         ["s", "Redactar entradas de blog siempre con la misma estructura.", "Un flujo de trabajo repetible."]],
+        "Decide si cada cosa encaja mejor como proyecto o como skill.")]],
+      quiz: [
+        { q: "¿Qué necesitas activar para usar Skills?", o: ["La búsqueda web", "La ejecución de código y creación de archivos", "El modo oscuro"], a: 1, w: "Las skills funcionan en un entorno seguro de ejecución." },
+        { q: "¿Cuál es la diferencia entre proyectos y skills?", o: ["Son lo mismo", "Los proyectos guardan conocimiento; las skills ejecutan tareas", "Las skills solo sirven para programar"], a: 1, w: "El qué frente al cómo." },
+        { q: "Encuentras una skill gratuita en una web desconocida. ¿Qué haces?", o: ["La instalo directamente", "Reviso su contenido antes; solo instalo de fuentes de confianza", "La comparto con todo el equipo"], a: 1, w: "Pueden incluir código ejecutable." }
+      ] },
+    { id: 8, t: "Conectar tus herramientas", en: "Connecting your tools", slug: "connecting-your-tools",
+      ideas: [
+        "Los <b>conectores</b> dejan que Claude llegue a tus herramientas: busca, lee y, si el conector lo permite, actúa por ti. Así trabaja con el archivo real en vez de con una copia pegada.",
+        "Funcionan con <b>MCP (Model Context Protocol)</b>, un estándar abierto que es como el USB-C de la IA.",
+        "Dos tipos: <b>conectores web</b> (servicios en la nube como Gmail, Notion, Slack o Asana) y <b>extensiones de escritorio</b> (archivos y aplicaciones locales, a través de la app de escritorio).",
+        "Configurar uno: buscarlo en el directorio, conectar (en Team y Enterprise un Owner debe añadirlo antes), iniciar sesión, revisar permisos y probar. Un conector puede cubrir varias apps: Atlassian incluye Jira y Confluence.",
+        "Seguridad: acceso acotado y configurable, <b>Claude solo ve lo que tú puedes ver</b> y puedes desconectarlo cuando quieras."
+      ],
+      terms: [["Connector", "conector"], ["MCP (Model Context Protocol)", "protocolo de contexto de modelo"], ["Web connector / Desktop extension", "conector web / extensión de escritorio"], ["Scoped access", "acceso acotado"]],
+      ficha: [["Qué son", "Acceso de Claude a tus herramientas para leer y actuar."], ["Tecnología", "MCP, el «USB-C de la IA»."], ["Tipos", "Web (nube) y desktop extensions (local, app de escritorio)."], ["Activar", "Directorio → Connect → login → permisos → prueba. En Team/Enterprise, el Owner lo añade primero."], ["Seguridad", "Acceso acotado; Claude ve lo que tú ves; revocable."]],
+      recuerda: "Conectar no hace que Claude busque por su cuenta: le da un sitio al que apuntar cuando tú se lo pides.",
+      widgets: [["¿Conector web o extensión de escritorio?", wClassify(
+        { w: "Conector web", d: "Extensión de escritorio" },
+        [["w", "Notion", "Servicio en la nube."], ["d", "Los archivos de una carpeta de tu ordenador", "Archivos locales: app de escritorio."],
+         ["w", "Slack", "Servicio en la nube."], ["d", "Una aplicación instalada en tu ordenador", "Aplicación nativa local."], ["w", "Gmail", "Servicio en la nube."]],
+        "Regla de la lección: lo que está en tu ordenador, extensión de escritorio; lo que está en internet, conector web.")]],
+      quiz: [
+        { q: "¿Qué estándar hace funcionar los conectores?", o: ["HTML", "MCP (Model Context Protocol)", "SQL"], a: 1, w: "El USB-C de la IA." },
+        { q: "Conectas tu Gmail del trabajo. ¿Puede Claude leer el buzón del director?", o: ["Sí", "No: solo ve lo que tú puedes ver", "Solo los lunes"], a: 1, w: "Los permisos son los tuyos." },
+        { q: "¿Qué necesitas para usar una extensión de escritorio?", o: ["La app de escritorio de Claude", "Un plan Enterprise", "Un navegador concreto"], a: 0, w: "Corren en local." }
+      ] },
+    { id: 9, t: "Enterprise Search", en: "Enterprise search", slug: "enterprise-search",
+      ideas: [
+        "Solo en planes <b>Team y Enterprise</b>, y lo activa un administrador. Añade la opción «Ask {tu organización}» en la barra lateral.",
+        "Es como un proyecto con todo el conocimiento de la empresa ya cargado, pensado para encontrar y combinar información de muchas fuentes. Siempre cita sus fuentes.",
+        "Sirve para ponerse al día, dudas de políticas y procesos, investigación interna, incorporación de nuevos compañeros y seguimiento de proyectos.",
+        "Configuración en dos pasos: un Owner conecta las herramientas de la organización (obligatorio uno de Documentos y uno de Chat; correo recomendado) y cada persona se autentica con sus cuentas.",
+        "Seguridad: <b>solo muestra lo que ya puedes ver</b> en la herramienta original; las conversaciones son privadas y los datos no se indexan ni se guardan aparte."
+      ],
+      terms: [["Enterprise Search", "búsqueda en la empresa"], ["Ask {Org}", "pregunta a tu organización"], ["Owner", "propietario de la organización"]],
+      ficha: [["Qué es", "«Ask {Org}»: proyecto con el conocimiento de toda la empresa."], ["Planes", "Team y Enterprise; lo activa un admin."], ["Configurar", "Owner: Documentos + Chat (+ correo recomendado). Usuarios: autenticarse."], ["Seguridad", "Solo lo que ya puedes ver; privado; sin indexar ni almacenar aparte."], ["Extra", "Cita las fuentes."]],
+      recuerda: "Preguntas sobre tu empresa: Enterprise Search. Sobre el mundo: búsqueda web.",
+      widgets: [["¿Enterprise Search o búsqueda web?", wClassify(
+        { es: "Enterprise Search", w: "Búsqueda web" },
+        [["es", "¿Cuál es nuestra política de teletrabajo?", "Política interna."], ["es", "¿Qué pasó ayer mientras estaba fuera?", "Mensajes y documentos de tu organización."],
+         ["w", "¿Qué tiempo hará mañana en Madrid?", "Dato público y actual."], ["es", "¿Cómo se solicita aquí un reembolso de gastos?", "Proceso interno."],
+         ["w", "¿Qué ha anunciado hoy un competidor en su web?", "Información pública."]],
+        "Decide qué herramienta responde mejor a cada pregunta.")]],
+      quiz: [
+        { q: "¿En qué planes está Enterprise Search?", o: ["En todos", "Team y Enterprise", "Solo Pro"], a: 1, w: "Y debe activarlo un administrador." },
+        { q: "¿Puede Enterprise Search enseñarte documentos a los que no tienes acceso?", o: ["Sí", "No, solo lo que ya puedes ver", "Solo si eres nuevo"], a: 1, w: "Respeta los permisos originales." },
+        { q: "¿Qué conectores son obligatorios al configurarlo?", o: ["Uno de Documentos y uno de Chat", "Solo el correo", "Ninguno"], a: 0, w: "El correo es recomendable pero opcional." }
+      ] },
+    { id: 10, t: "Research para investigar a fondo", en: "Research for deep dives", slug: "research-mode-for-deep-dives",
+      ideas: [
+        "<b>Research</b> convierte a Claude en un investigador sistemático: hace muchas búsquedas que se apoyan unas en otras, desde varios ángulos, en la web y en tus integraciones.",
+        "Tarda minutos, no segundos. Usa <b>Thinking</b> para planificar antes de buscar y entrega un informe con <b>citas</b> que puedes comprobar.",
+        "Funciona en cuatro pasos: planifica, hace búsquedas múltiples, combina lo encontrado y cita las fuentes. Necesita la búsqueda web activada y está en planes de pago.",
+        "Elige bien: búsqueda web para un dato rápido, Thinking para razonar sin información externa, Enterprise Search para el conocimiento interno, Research para informes de muchas fuentes.",
+        "Buenos prompts de Research: objetivo concreto, estructura de secciones, restricciones (presupuesto, plazos, zona). Puedes pedirle a Claude que te ayude a escribirlo."
+      ],
+      terms: [["Research", "investigación"], ["Agentic", "agéntico (decide sus siguientes pasos)"], ["Citations", "citas"], ["Thinking", "razonamiento"]],
+      ficha: [["Qué es", "Investigación agéntica de muchas fuentes con informe y citas."], ["Pasos", "Planificar → búsquedas múltiples → combinar → citar."], ["Requisitos", "Búsqueda web activada; planes de pago."], ["Alternativas", "Dato rápido: web search. Razonar: Thinking. Interno: Enterprise Search."], ["Buen prompt", "Objetivo + estructura + restricciones."]],
+      recuerda: "Muchas fuentes y citas: Research. Un dato: búsqueda web.",
+      widgets: [["¿Qué herramienta usarías?", wClassify(
+        { r: "Research", w: "Búsqueda web", t: "Thinking", e: "Enterprise Search" },
+        [["r", "Comparar cinco proveedores de software con un informe citado.", "Varias fuentes y síntesis."],
+         ["w", "La dirección de las oficinas de una empresa.", "Un dato concreto."],
+         ["t", "Encontrar el fallo lógico en una fórmula complicada.", "Razonar, sin información externa."],
+         ["e", "Cómo gestionó tu empresa el último cambio de precios.", "Conocimiento interno."],
+         ["r", "Planificar un evento de equipo comparando sedes, catering y precios.", "Investigación desde varios ángulos."]],
+        "Elige la herramienta adecuada para cada petición.")],
+        ["¿Qué prompt de Research es mejor?", wClassify(
+        { a: "Prompt A", b: "Prompt B" },
+        [["b", "A: «Háblame del mercado de coches eléctricos.» · B: «Analiza el mercado de baterías para coches eléctricos: principales empresas, tendencias tecnológicas y problemas de suministro que puedan afectar a una inversión.»", "B tiene objetivo y ángulos concretos."],
+         ["a", "A: «Compara sedes para una reunión de equipo de 30 personas en Valencia en marzo: acceso, salas, catering y precio, con un presupuesto máximo de 6.000 €.» · B: «Busca sitios para una reunión.»", "A da estructura y restricciones."]],
+        "Elige el prompt que daría mejor resultado.")]],
+      quiz: [
+        { q: "¿Qué hace diferente a Research de una búsqueda web?", o: ["Es más rápido", "Hace muchas búsquedas encadenadas y entrega un informe con citas", "No usa internet"], a: 1, w: "Es agéntico." },
+        { q: "Necesitas razonar un problema de lógica sin información externa. ¿Qué usas?", o: ["Research", "Thinking", "Enterprise Search"], a: 1, w: "No hace falta buscar." },
+        { q: "¿Qué debe estar activado para que funcione Research?", o: ["La búsqueda web", "La memoria", "Las skills"], a: 0, w: "En la nueva experiencia Claude busca cuando le ayuda." }
+      ] },
+    { id: 11, t: "Claude en acción: casos por rol", en: "Claude in action: use-cases by role", slug: "claude-in-action-use-cases-by-role",
+      ideas: [
+        "<b>Para cualquier rol</b>: informes de estado de proyectos, analizar comentarios de usuarios, empaquetar la guía de marca en una skill.",
+        "<b>Ventas</b>: biblioteca de battle cards, preparar reuniones comerciales, informes de ventas. <b>Marketing</b>: analizar campañas, adaptar contenido a cada canal.",
+        "<b>Finanzas</b>: modelos financieros, memorandos de inversión, entender y ampliar una hoja de cálculo heredada. <b>RR. HH.</b>: guías de incorporación.",
+        "<b>Legal</b>: seguir plazos de discovery y detectar patrones. <b>Investigación</b>: planificar revisiones bibliográficas y verificar estadísticas.",
+        "Hay más ideas en la galería de casos de uso (Use Case Gallery)."
+      ],
+      terms: [["Use Case Gallery", "galería de casos de uso"], ["Battle card", "ficha comercial frente a un competidor"], ["Onboarding guide", "guía de incorporación"]],
+      ficha: [["General", "Informes de estado, análisis de feedback, skill de marca."], ["Ventas / Marketing", "Battle cards, preparar reuniones, informes / analizar campañas, adaptar contenido."], ["Finanzas / RR. HH.", "Modelos, memorandos, hojas heredadas / guías de incorporación."], ["Legal / Investigación", "Plazos de discovery / revisiones bibliográficas, verificar estadísticas."]],
+      recuerda: "Empieza por una tarea de tu rol que repitas cada semana.",
+      widgets: [["¿De qué rol es este caso?", wClassify(
+        { sa: "Ventas", mk: "Marketing", fi: "Finanzas", hr: "RR. HH.", lg: "Legal", rs: "Investigación" },
+        [["sa", "Crear una biblioteca de battle cards contra la competencia.", "Inteligencia competitiva para ganar operaciones."],
+         ["mk", "Adaptar un mismo contenido a varias redes.", "Reutilizar contenido por canal."],
+         ["fi", "Entender y ampliar una hoja de cálculo heredada.", "Caso de finanzas."],
+         ["hr", "Guías de incorporación para cada puesto.", "Onboarding."],
+         ["lg", "Seguir los plazos de discovery de un caso.", "Gestión de plazos legales."],
+         ["rs", "Planificar una revisión bibliográfica.", "Investigación académica."]],
+        "Empareja cada caso de uso con su rol.")],
+        ["Tu caso", wNote("case101", "¿Qué caso de uso vas a probar esta semana en tu trabajo?", "Ej.: informe de estado semanal del proyecto para dirección.")]],
+      quiz: [
+        { q: "«Entender y ampliar una hoja de cálculo heredada» aparece en la lección como caso de…", o: ["Marketing", "Finanzas", "Legal"], a: 1, w: "Finance." },
+        { q: "¿Dónde encuentras más ideas paso a paso?", o: ["En la galería de casos de uso", "En la configuración", "En la pestaña Code"], a: 0, w: "Use Case Gallery." },
+        { q: "¿Qué caso sirve para cualquier rol?", o: ["Seguir plazos de discovery", "Generar informes de estado de proyectos", "Battle cards"], a: 1, w: "General professional use." }
+      ] },
+    { id: 12, t: "Otras formas de trabajar con Claude", en: "Other ways to work with Claude", slug: "other-ways-to-work-with-claude",
+      ideas: [
+        "Claude es una inteligencia; claude.ai es solo una de sus puertas. <b>Claude Code</b>: programar en terminal, IDE o navegador.",
+        "<b>Claude Tag</b>: Claude dentro de Slack para resumir hilos, redactar respuestas o lanzar tareas de código desde una conversación.",
+        "<b>Claude Design</b>: de una idea, boceto o captura a un prototipo interactivo.",
+        "<b>Claude for Microsoft 365</b>: barra lateral en Excel (fórmulas, errores, escenarios, tablas dinámicas), PowerPoint, Word y Outlook (en beta).",
+        "<b>Claude in Chrome</b>: extensión del navegador que actúa en las webs. Solo en planes de pago, mejor para tareas de bajo riesgo en webs de confianza; pide permiso antes de acciones sensibles y bloquea por defecto webs financieras."
+      ],
+      terms: [["Claude Code", "programación agéntica"], ["Claude Tag", "Claude en Slack"], ["Claude for Microsoft 365", "Claude en Excel, PowerPoint, Word y Outlook"], ["Claude in Chrome", "Claude en el navegador"], ["Prompt injection", "inyección de instrucciones"]],
+      ficha: [["Claude Code", "Software: terminal, IDE, navegador."], ["Claude Tag", "Slack: hilos, reuniones, tareas de código."], ["Claude Design", "Prototipos desde texto, boceto o captura."], ["Microsoft 365", "Excel, PowerPoint, Word, Outlook (beta)."], ["Chrome", "Navegador; planes de pago; tareas de bajo riesgo; pide permiso en acciones sensibles."]],
+      recuerda: "Usa la versión de Claude que vive donde ya está tu trabajo.",
+      widgets: [["¿Qué Claude usarías?", wClassify(
+        { code: "Claude Code", tag: "Claude Tag", des: "Claude Design", xls: "Claude for Excel", ppt: "PowerPoint / Word", out: "Claude for Outlook", chr: "Claude in Chrome" },
+        [["tag", "Resumir un hilo largo de Slack sin salir de Slack.", "Claude dentro de Slack."],
+         ["xls", "Arreglar un error #REF! en un modelo financiero.", "Trabaja dentro de la hoja."],
+         ["des", "Un prototipo de pantalla a partir de un boceto.", "De idea a interfaz."],
+         ["chr", "Rellenar formularios repetitivos en varias webs.", "Actúa en el navegador."],
+         ["out", "Clasificar el correo y redactar respuestas con contexto del calendario.", "Barra lateral en la bandeja de entrada."],
+         ["code", "Corregir errores de estilo del código y escribir las notas de versión.", "Tareas de desarrollo."],
+         ["ppt", "Convertir un esquema en una presentación con la plantilla de la empresa.", "Respeta tu plantilla y estilo."]],
+        "Elige la herramienta que encaja con cada tarea.")]],
+      quiz: [
+        { q: "Quieres que Claude te ayude dentro de un modelo de Excel con varias pestañas. ¿Qué usas?", o: ["Claude in Chrome", "Claude for Excel", "Claude Tag"], a: 1, w: "Barra lateral dentro de Excel." },
+        { q: "¿En qué planes está Claude in Chrome?", o: ["En todos, incluido Free", "Solo en planes de pago", "Solo Enterprise"], a: 1, w: "Pro, Max, Team y Enterprise." },
+        { q: "¿Qué hace Claude in Chrome antes de una compra?", o: ["Compra directamente", "Pide permiso", "Nada"], a: 1, w: "Siempre pregunta antes de acciones sensibles." }
+      ] },
+    { id: 13, t: "¿Y ahora qué?", en: "What's next?", slug: "what-s-next",
+      ideas: [
+        "Repaso: Claude es un compañero de pensamiento; un buen prompt tiene escenario, tarea y reglas; y hay que iterar.",
+        "Para organizar el trabajo: <b>proyectos</b> (conocimiento e instrucciones), <b>artifacts</b> (entregables que se editan y comparten) y <b>skills</b> (procesos repetibles).",
+        "Para ampliar su alcance: <b>conectores</b>, <b>Enterprise Search</b> y <b>Research</b>. Y Claude también vive en Slack, Microsoft 365, Chrome y Claude Code.",
+        "Consejo final: empieza poco a poco. Elige una tarea recurrente esta semana, pruébala con Claude e itera. Claude es un colaborador, no un sustituto."
+      ],
+      terms: [["Collaborator, not a replacement", "colaborador, no sustituto"], ["AI Fluency", "fluidez con la IA"]],
+      ficha: [["Empezar", "Compañero de pensamiento · escenario + tarea + reglas · iterar."], ["Organizar", "Projects · Artifacts · Skills."], ["Ampliar", "Connectors · Enterprise Search · Research."], ["Otras puertas", "Claude Code, Tag, Design, Microsoft 365, Chrome."]],
+      recuerda: "Una tarea recurrente esta semana. Pruébala e itera.",
+      widgets: [["Tu tarea de esta semana", wNote("commit101", "La lección termina pidiéndote una cosa: elige una tarea recurrente y pruébala con Claude esta semana.", "Ej.: resumir las notas de la reunión de los martes con una plantilla fija dentro de un proyecto.")]],
+      quiz: [
+        { q: "¿Qué guarda un proyecto y qué hace una skill?", o: ["Proyecto: proceso; skill: conocimiento", "Proyecto: conocimiento; skill: proceso", "Los dos lo mismo"], a: 1, w: "El qué frente al cómo." },
+        { q: "¿Cuál es el consejo final del curso?", o: ["Automatizarlo todo ya", "Empezar con una tarea recurrente e iterar", "Esperar a modelos mejores"], a: 1, w: "La práctica hace el resto." },
+        { q: "¿Qué papel tiene Claude según el curso?", o: ["Sustituir a las personas", "Colaborar contigo", "Solo responder preguntas"], a: 1, w: "Tú aportas experiencia, contexto y criterio." }
+      ] },
+    { id: 14, t: "Examen del curso", en: "Course quiz", slug: "certificate-of-completion",
+      ideas: [
+        "El examen oficial está en la web del curso y da una insignia de finalización que puedes compartir en LinkedIn.",
+        "Aquí tienes un <b>examen de práctica</b> en inglés con 12 preguntas que cubren Claude 101.",
+        "Repasa antes las fichas y el vocabulario en inglés de cada lección."
+      ],
+      terms: [["Completion badge", "insignia de finalización"]],
+      ficha: [["Bloques", "Qué es Claude · prompts e iteración · escritorio (Chat, Cowork, Code) · proyectos · artifacts · skills · conectores · Enterprise Search · Research · otras puertas."], ["Truco", "Para cada función: qué es, cuándo usarla, en qué planes y qué precauciones."]],
+      recuerda: "Repasa las fichas y practica con tus tareas reales.",
+      widgets: [["Examen de práctica (en inglés)", wExam([
+        ["What are the three parts of an effective prompt taught in Claude 101?", ["Greeting, question, closing", "Setting the stage, defining the task, specifying rules", "Model, temperature, length"], 1, "Escenario, tarea y reglas."],
+        ["Which Claude model does the course recommend as the everyday default?", ["Haiku", "Sonnet", "Opus"], 1, "Opus para las tareas más complejas."],
+        ["A task has several steps, should save finished files to a folder, and runs every Monday. Where does it belong?", ["Chat", "Cowork", "The Code tab"], 1, "Encargar trabajo: Cowork."],
+        ["What happens when a project's knowledge approaches the context window limit?", ["Uploads are blocked", "It switches to RAG and retrieves only relevant content", "Older files are deleted"], 1, "Hasta 10x de capacidad."],
+        ["Which permission level can modify project instructions?", ["Can view", "Can edit", "Guest"], 1, "Can view es solo lectura con chat."],
+        ["What is the key difference between an artifact and file creation?", ["Artifacts update inside Claude and are shared by link; files are downloaded", "Artifacts are only code", "There is no difference"], 0, "Dos formas de entregar."],
+        ["\"Projects store knowledge, skills…\"", ["…store more knowledge", "…perform tasks", "…replace connectors"], 1, "Proceso repetible."],
+        ["What must be enabled to use Skills?", ["Web search", "Code execution and file creation", "Memory"], 1, "Entorno de ejecución seguro."],
+        ["What open standard powers connectors?", ["Model Context Protocol (MCP)", "OAuth only", "REST"], 0, "El USB-C de la IA."],
+        ["With Enterprise Search, can you see documents you don't have access to in the original tool?", ["Yes", "No", "Only admins' documents"], 1, "Respeta tus permisos."],
+        ["You need a quick single fact like a company's address. Best tool?", ["Research", "Web search", "Enterprise Search"], 1, "Research es para informes de muchas fuentes."],
+        ["Which statement about Claude in Chrome is correct?", ["It's available on the Free plan", "It asks permission before high-risk actions like purchases", "It is recommended for banking tasks"], 1, "Mejor para tareas de bajo riesgo en webs de confianza."]
+      ])]],
+      quiz: null }
+  ];
+
+  // ============ AI Fluency (estructura; contenido pendiente) ============
+  const FLU = [
+    [1, "Introducción a AI Fluency", "Introduction to AI Fluency", "introduction-to-ai-fluency"],
+    [2, "¿Por qué necesitamos AI Fluency?", "Why do we need AI Fluency?", "why-do-we-need-ai-fluency"],
+    [3, "El marco de las 4D", "The 4D Framework", "the-4d-framework"],
+    [4, "Fundamentos de la IA generativa", "Generative AI fundamentals", "generative-ai-fundamentals"],
+    [5, "Capacidades y limitaciones", "Capabilities & limitations", "capabilities-limitations"],
+    [6, "Delegación en detalle", "A closer look at Delegation", "a-closer-look-at-delegation"],
+    [7, "Planificación de proyectos y delegación", "Project planning and Delegation", "project-planning-and-delegation"],
+    [8, "Descripción en detalle", "A closer look at Description", "a-closer-look-at-description"],
+    [9, "Técnicas de prompting eficaces", "Effective prompting techniques", "effective-prompting-techniques"],
+    [10, "Discernimiento en detalle", "A closer look at Discernment", "a-closer-look-at-discernment"],
+    [11, "El bucle Descripción-Discernimiento", "The Description-Discernment loop", "the-description-discernment-loop"],
+    [12, "Diligencia en detalle", "A closer look at Diligence", "a-closer-look-at-diligence"],
+    [13, "Conclusión", "Conclusion", "conclusion"],
+    [14, "Examen del curso", "Course quiz", "certificate-of-completion"],
+    [15, "Actividades adicionales", "Additional activities", "additional-activities"]
+  ].map(r => ({ id: r[0], t: r[1], en: r[2], slug: r[3] }));
+
+  // ============ Curso de preparación del examen (8 módulos) ============
+  const CCA_BASE = "https://anthropic-partners.skilljar.com/path/claude-certified-associate-foundations/";
+  const CCA = [
+    { id: 1, t: "Plataforma y modelos de Claude", en: "Claude Platform & Model Foundations", slug: "claude-platform-model-foundations", min: 59, dom: ["Product and Model Selection", 12],
+      about: "Las cuatro decisiones que fijan el techo de calidad de cada sesión antes de escribir un prompt: punto de entrada, funciones, modelo y contexto.",
+      obj: ["Elegir el punto de entrada y las funciones de Claude adecuadas para cada tarea profesional", "Diferenciar Haiku, Sonnet y Opus por sus capacidades y la tarea a la que encajan", "Elegir modelo según calidad, velocidad y volumen", "Gestionar los límites de contexto y usar la memoria para dar continuidad entre sesiones"] },
+    { id: 2, t: "Prompting y ejecución de tareas", en: "Prompting & Task Execution", slug: "prompting-task-execution", min: 53, dom: ["Prompting and Task Execution", 14],
+      about: "El prompting como disciplina de comunicación con una estructura repetible. Su base es la Descripción del marco AI Fluency.",
+      obj: ["Crear prompts eficaces con una estructura de componentes repetible", "Descomponer peticiones complejas en partes", "Iterar prompts de forma diagnóstica", "Adaptar el prompt al tipo de tarea: análisis, investigación, redacción o lluvia de ideas"] },
+    { id: 3, t: "Evaluar y validar lo que produce Claude", en: "Evaluating & Validating Claude's Output", slug: "evaluating-validating-claudes-output", min: 74, dom: ["Output Evaluation and Validation", 21],
+      about: "Evaluar y validar el resultado para poder respaldar cualquier entregable que firmes.",
+      obj: ["Evaluar la exactitud y la completitud", "Detectar alucinaciones, incoherencias y sesgos", "Aplicar técnicas de verificación de datos", "Decidir cuándo hace falta revisión humana o verificación adicional", "Editar, adaptar y comparar resultados para el público al que van", "Elegir el formato de salida adecuado"] },
+    { id: 4, t: "Integración en flujos de trabajo", en: "Workflow Integration & Solution Design", slug: "workflow-integration-solution-design", min: 63, dom: ["Workflow Integration and Solution Design", 16],
+      about: "Pasar de «yo uso Claude» a «nuestro flujo usa Claude», decidiendo qué pasos delegar y cuáles mantener en manos humanas. Se apoya en la Delegación del marco AI Fluency.",
+      obj: ["Usar Claude para analizar requisitos y casos de uso", "Usarlo para investigar, planificar y optimizar procesos", "Apoyar el diseño, el desarrollo y la iteración de soluciones", "Integrarlo en flujos existentes para mejorarlos o rediseñarlos", "Comunicar con precisión el valor y los límites de Claude a otras personas"] },
+    { id: 5, t: "Configuración y gestión del conocimiento", en: "Configuration & Knowledge Management", slug: "configuration-knowledge-management", min: 47, dom: ["Configuration and Knowledge Management", 12],
+      about: "Configurar Claude una vez para que cada conversación empiece con el contexto adecuado, y mantener esa configuración al día.",
+      obj: ["Configurar proyectos con instrucciones y fuentes de conocimiento", "Gestionar el conocimiento subido y los conectores", "Escribir instrucciones de proyecto eficaces", "Mantener y actualizar configuraciones, fuentes e instrucciones"] },
+    { id: 6, t: "Gobernanza, riesgo y uso responsable", en: "Governance, Risk & Responsible Use", slug: "governance-risk-responsible-use", min: 55, dom: ["Governance, Risk, and Responsible Use", 15],
+      about: "El criterio para decidir qué es seguro y apropiado llevar a Claude según tus datos, tu sector y las normas de tu organización.",
+      obj: ["Identificar usos apropiados e inapropiados", "Aplicar criterios de sensibilidad de datos, privacidad y regulación", "Seguir las políticas de IA y los estándares de gobernanza de la organización", "Entender las implicaciones éticas del uso de la IA"] },
+    { id: 7, t: "Resolución de problemas y optimización", en: "Troubleshooting & Optimization", slug: "troubleshooting-optimization", min: 30, dom: ["Troubleshooting and Optimization", 10],
+      about: "Diagnosticar por qué un resultado decepciona, encontrar la causa y convertir un arreglo puntual en uno permanente.",
+      obj: ["Diagnosticar la causa raíz: poca especificación, exceso de contexto, función o modelo equivocado, o configuración desactualizada", "Convertir las correcciones repetidas en arreglos que perduran", "Optimizar flujos llevando contexto, formato y verificación a proyectos, skills e instrucciones fijas"] },
+    { id: 8, t: "Resumen y próximos pasos", en: "Course Summary & Next Steps", slug: "course-summary-next-steps", min: 8, dom: null,
+      about: "Une las siete habilidades (selección, prompting, evaluación, integración, configuración, gobernanza y resolución de problemas) en una sola disciplina y presenta el examen Claude Certified Associate Foundations.",
+      obj: [] }
+  ].map(m => Object.assign(m, { url: CCA_BASE + m.slug }));
+
+  const COURSES = [
+    { id: "c101", n: 1, t: "Claude 101", short: "Claude 101", role: "Curso previo recomendado", base: "https://academy.claude.com/courses/claude-101/", lessons: C101,
+      desc: "Usar Claude en el trabajo diario: primera conversación, prompts, proyectos, artifacts, skills, conectores y otras herramientas." },
+    { id: "flu", n: 2, t: "AI Fluency: Framework & Foundations", short: "AI Fluency", role: "Curso previo recomendado", base: "https://academy.claude.com/courses/ai-fluency-framework-foundations/", lessons: FLU,
+      desc: "El marco de las 4D: Delegación, Descripción, Discernimiento y Diligencia." },
+    { id: "cap", n: 3, t: "AI Capabilities and Limitations", short: "Capacidades y limitaciones", role: "Curso previo recomendado", base: BASE, lessons: CAP,
+      desc: "Qué puede y qué no puede hacer un modelo de lenguaje: las cuatro propiedades y cómo chocan." },
+    { id: "cca", n: 4, t: "Claude Certified Associate – Foundations Prep Course", short: "Preparación del examen", role: "Curso de preparación (8 módulos)", base: CCA_BASE, lessons: CCA,
+      desc: "Siete habilidades para usar Claude con resultados fiables y repetibles, alineadas con los siete dominios del examen." }
+  ];
+  const CBY = Object.fromEntries(COURSES.map(c => [c.id, c]));
+  const lessonUrl = (c, l) => l.url || (c.base + l.slug);
+  const built = l => !!l.ideas;
+
+  // Migrar el progreso guardado de la versión anterior (solo había un curso)
+  (function migrate() {
+    let changed = false;
+    Object.keys(done).forEach(k => { if (/^\d+$/.test(k)) { done["cap:" + k] = done[k]; delete done[k]; changed = true; } });
+    if (changed) store.set("done", done);
+  })();
+  const dk = (cid, id) => cid + ":" + id;
+
+  // ============ Tutor con Claude ============
+  const chats = store.get("chats", {});
+  Object.keys(chats).forEach(k => { if (/^\d+$/.test(k)) { chats["cap:" + k] = chats[k]; delete chats[k]; } });
+  function lessonContext(c, l) {
+    return `Curso: ${c.t}\nLección ${l.id}: ${l.t} (${l.en})\nIdeas clave:\n- ${l.ideas.map(strip).join("\n- ")}\nFicha:\n${l.ficha.map(f => `${f[0]}: ${f[1]}`).join("\n")}\nVocabulario: ${l.terms.map(t => `${t[0]} = ${t[1]}`).join("; ")}`;
+  }
+
+  function renderChat(el, c, l) {
+    const key = dk(c.id, l.id);
     const SUG = ["Explícamelo con un ejemplo de mi trabajo en una empresa", "Hazme una pregunta tipo examen y corrígeme", "¿Qué es lo más importante de esta lección para el examen?"];
     el.innerHTML = `<span class="eyebrow">Tutor</span><h3>Pregúntale a Claude sobre esta lección</h3>
       <p class="hint" id="cst">Conectando con Claude…</p>
@@ -1018,14 +1503,14 @@ textarea { min-height: 110px; resize: vertical; }
       <div class="chips"><button class="chip small" id="cclr" type="button">Borrar conversación</button></div>`;
     const log = el.querySelector("#clog"), st = el.querySelector("#cst"), form = el.querySelector("#cf"), inp = el.querySelector("#cin");
     const send = el.querySelector("#csend"), stop = el.querySelector("#cstop");
-    let turns = chats[l.id] || [], ctl = null;
+    let turns = chats[key] || [], ctl = null;
     const draw = () => { log.innerHTML = turns.map(t => `<div class="bub ${t.role === "user" ? "me" : "ai"}">${t.role === "user" ? esc(t.content) : md(t.content)}</div>`).join(""); log.scrollTop = log.scrollHeight; };
-    const save = () => { chats[l.id] = turns.slice(-20); store.set("chats", chats); };
+    const save = () => { chats[key] = turns.slice(-20); store.set("chats", chats); };
     draw();
     const setAvail = ok => { form.hidden = !ok; el.querySelector("#csug").hidden = !ok; st.textContent = ok ? "Responde en español, basándose en el contenido de esta lección. Usa tu cuenta de Claude; la primera vez te pedirá permiso." : "El tutor solo funciona al abrir la app desde Claude (claude.ai o la app de Claude) y con permiso para usar Claude."; };
     setAvail(false); st.textContent = "Conectando con Claude…";
     sampleReady.then(s => setAvail(!!s));
-    const RULES = `Eres un tutor paciente que ayuda a una persona no técnica a estudiar el curso "AI Capabilities and Limitations" de Anthropic para preparar su examen oficial (en inglés). Responde siempre en español, claro y breve (máximo 180 palabras salvo que pida más), con ejemplos de la vida laboral cotidiana. Incluye el término en inglés entre paréntesis cuando sea útil para el examen. Básate en este contenido de la lección; si preguntan algo fuera, responde brevemente y relaciónalo con el curso. Si te pide una pregunta de examen, haz una sola pregunta tipo test en inglés con 3 opciones y espera su respuesta antes de corregir.\n\n${lessonContext(l)}`;
+    const RULES = `Eres un tutor paciente que ayuda a una persona no técnica a preparar la certificación Claude Certified Associate (examen en inglés). Responde siempre en español, claro y breve (máximo 180 palabras salvo que pida más), con ejemplos de la vida laboral cotidiana. Incluye el término en inglés entre paréntesis cuando sea útil para el examen. Básate en este contenido de la lección; si preguntan algo fuera, responde brevemente y relaciónalo con el curso. Si te pide una pregunta de examen, haz una sola pregunta tipo test en inglés con 3 opciones y espera su respuesta antes de corregir.\n\n${lessonContext(c, l)}`;
     async function ask(text) {
       if (!sampleFn || ctl) return;
       turns.push({ role: "user", content: text }); draw();
@@ -1040,7 +1525,7 @@ textarea { min-height: 110px; resize: vertical; }
         const partial = e && e.text;
         if (partial) { turns.push({ role: "assistant", content: partial }); save(); bub.classList.remove("thinking"); }
         else bub.remove();
-        if (e && (e.code === "not_granted" || e.code === "sampling_disabled" || e.code === "not_declared" || e.code === "capability_disabled")) { sampleFn = null; setAvail(false); }
+        if (e && ["not_granted", "sampling_disabled", "not_declared", "capability_disabled"].includes(e.code)) { sampleFn = null; setAvail(false); }
         else if (e && e.code === "rate_limited") st.textContent = "Has hecho muchas preguntas seguidas. Espera un poco y vuelve a intentarlo.";
         else if (e && e.code !== "cancelled") st.textContent = "No se pudo obtener respuesta. Inténtalo de nuevo.";
         if (!partial) { turns.pop(); draw(); inp.value = text; }
@@ -1049,41 +1534,71 @@ textarea { min-height: 110px; resize: vertical; }
     form.addEventListener("submit", e => { e.preventDefault(); const v = inp.value.trim(); if (!v) return; inp.value = ""; ask(v); });
     stop.addEventListener("click", () => ctl && ctl.abort());
     el.querySelector("#csug").addEventListener("click", e => { const b = e.target.closest("button"); if (b) ask(b.textContent); });
-    el.querySelector("#cclr").addEventListener("click", () => { turns = []; delete chats[l.id]; store.set("chats", chats); draw(); });
+    el.querySelector("#cclr").addEventListener("click", () => { turns = []; delete chats[key]; store.set("chats", chats); draw(); });
   }
 
   // ============ Render ============
-  const nav = document.getElementById("nav"), main = document.getElementById("main");
+  const nav = document.getElementById("nav"), main = document.getElementById("main"), ctabs = document.getElementById("ctabs");
+  const ALL = COURSES.reduce((n, c) => n + c.lessons.length, 0);
+  const cDone = c => c.lessons.filter(l => done[dk(c.id, l.id)]).length;
 
-  function setDone(id, v) { if (v) done[id] = true; else delete done[id]; store.set("done", done); progress(); }
+  function setDone(cid, id, v) { const k = dk(cid, id); if (v) done[k] = true; else delete done[k]; store.set("done", done); progress(); }
   function progress() {
-    const n = L.filter(l => done[l.id]).length;
-    document.getElementById("progLbl").textContent = `${n} de ${L.length} lecciones completadas`;
-    document.getElementById("progBar").style.width = (n / L.length * 100) + "%";
+    const n = COURSES.reduce((s, c) => s + cDone(c), 0);
+    document.getElementById("progLbl").textContent = `${n} de ${ALL} lecciones de la certificación completadas`;
+    document.getElementById("progBar").style.width = (n / ALL * 100) + "%";
   }
 
-  function renderNav(cur) {
-    nav.innerHTML = L.map(l => `
-      <button data-go="l${l.id}" aria-current="${l.id === cur}">
+  function renderTabs(cur) {
+    ctabs.innerHTML = `<button class="ctab" data-go="ruta" aria-current="${cur === "ruta"}">Ruta de certificación</button>` +
+      COURSES.map(c => `<button class="ctab" data-go="${c.id}-l1" aria-current="${cur === c.id}"><span class="k">${c.n}</span>${c.short}<span class="k">${cDone(c)}/${c.lessons.length}</span></button>`).join("") +
+      `<button class="ctab" data-go="fichas" aria-current="${cur === "fichas"}">★ Fichas</button>`;
+  }
+
+  function renderNav(c, curId) {
+    if (!c) { nav.innerHTML = COURSES.map(x => `<button data-go="${x.id}-l1"><span class="n">${x.n}</span><span class="t">${x.short}</span><span class="s">${cDone(x) === x.lessons.length ? "✓" : ""}</span></button>`).join(""); return; }
+    nav.innerHTML = `<span class="eyebrow" style="padding:4px 10px">${esc(c.short)}</span>` + c.lessons.map(l => `
+      <button data-go="${c.id}-l${l.id}" aria-current="${l.id === curId}">
         <span class="n">${String(l.id).padStart(2, "0")}</span><span class="t">${l.t}</span>
-        <span class="s">${done[l.id] ? "✓" : ""}</span>
-      </button>`).join("") + `<div class="sep"></div><button class="fichas-nav" data-go="fichas" aria-current="${cur === "fichas"}"><span class="n">★</span><span class="t">Fichas de examen</span><span class="s"></span></button>`;
+        <span class="s">${done[dk(c.id, l.id)] ? "✓" : built(l) ? "" : "·"}</span>
+      </button>`).join("");
   }
 
-  const fichaHTML = l => `<article class="ficha">
-      <div class="fh"><span class="eyebrow">Ficha ${String(l.id).padStart(2, "0")} · ${esc(l.en)}</span><h3>${l.t}</h3></div>
+  const fichaHTML = (c, l) => `<article class="ficha">
+      <div class="fh"><span class="eyebrow">${esc(c.short)} · ficha ${String(l.id).padStart(2, "0")} · ${esc(l.en)}</span><h3>${l.t}</h3></div>
       <dl>${l.ficha.map(f => `<dt>${f[0]}</dt><dd>${f[1]}</dd>`).join("")}<dt>Vocabulario</dt><dd>${l.terms.map(t => `<b class="mono">${t[0]}</b> = ${t[1]}`).join(" · ")}</dd></dl>
       <p class="rec">${l.recuerda}</p>
     </article>`;
 
-  function renderFichas() {
-    renderNav("fichas");
-    main.innerHTML = `<section class="panel lesson-head"><span class="eyebrow">Repaso</span><h2>Fichas de examen</h2>
-      <p class="hint">Una ficha por lección con lo esencial: pregunta clave, zonas de capacidad y limitación, fallos típicos, mitigaciones, conexión con las 4D y vocabulario en inglés. Repásalas antes del examen oficial.</p></section>
-      <div class="fichas-grid">${L.map(fichaHTML).join("")}</div>`;
+  function renderRuta() {
+    renderTabs("ruta"); renderNav(null);
+    const doms = CCA.filter(m => m.dom);
+    main.innerHTML = `
+      <section class="panel lesson-head"><span class="eyebrow">Certificación</span><h2>Claude Certified Associate – Foundations</h2>
+        <p class="hint">Ruta oficial según la web de Anthropic Partners: tres cursos previos recomendados y un curso de preparación de ocho módulos. El orden de abajo es el recomendado; tú ya has hecho «AI Capabilities and Limitations».</p>
+        <p class="hint">El examen cuesta 99 USD y, por ahora, solo pueden hacerlo personas de organizaciones del Claude Partner Network (según la web de partners; confírmalo allí antes de apuntarte).</p></section>
+      <div class="route-grid">${COURSES.map(c => {
+        const d = cDone(c), n = c.lessons.length, b = c.lessons.filter(built).length;
+        const st = d === n ? ["done", "Completado"] : d > 0 ? ["prog", "En curso"] : ["", "Pendiente"];
+        return `<div class="ccard"><span class="eyebrow">${c.n} · ${c.role}</span><h3>${c.t}</h3><p class="hint">${c.desc}</p>
+          <span class="pill ${st[0]}">${st[1]} · ${d}/${n}</span><div class="minibar"><i style="width:${d / n * 100}%"></i></div>
+          <p class="hint">${b === n ? "Preparado en el laboratorio." : b === 0 ? "Aún sin preparar en el laboratorio." : `${b} de ${n} lecciones preparadas.`}</p>
+          <div class="chips"><button class="btn ${b ? "" : "ghost"}" data-go="${c.id}-l1">${b ? "Abrir" : "Ver lecciones"}</button><a href="${c.base}" target="_blank" rel="noopener">Curso oficial ↗</a></div></div>`;
+      }).join("")}</div>
+      <section class="panel"><span class="eyebrow">El examen</span><h3>Los siete dominios y su peso</h3>
+        <p class="hint">Cada módulo del curso de preparación corresponde a un dominio. Los pesos vienen de una guía de estudio publicada en GitHub; confírmalos en la web oficial. El más pesado es «evaluar y validar» (21 %).</p>
+        <div class="doms">${doms.slice().sort((a, b) => b.dom[1] - a.dom[1]).map(m => `<div class="dom"><span><b>${m.dom[0]}</b><br><span class="hint">Módulo ${m.id}: ${m.t}</span></span><div class="track"><div class="fill" style="width:${m.dom[1] / 21 * 100}%"></div></div><span class="pct">${m.dom[1]} %</span></div>`).join("")}</div>
+      </section>`;
   }
 
-  function renderQuiz(el, l) {
+  function renderFichas() {
+    renderTabs("fichas"); renderNav(null);
+    main.innerHTML = `<section class="panel lesson-head"><span class="eyebrow">Repaso</span><h2>Fichas de examen</h2>
+      <p class="hint">Una ficha por lección preparada, agrupadas por curso. Repásalas antes del examen.</p></section>` +
+      COURSES.map(c => { const ls = c.lessons.filter(built); return ls.length ? `<section class="wbody"><h3>${c.n} · ${c.t}</h3><div class="fichas-grid">${ls.map(l => fichaHTML(c, l)).join("")}</div></section>` : ""; }).join("");
+  }
+
+  function renderQuiz(el, c, l) {
     const state = l.quiz.map(() => false);
     el.innerHTML = `<h3>Mini test</h3><p class="hint">Si fallas, lee la pista y vuelve a intentarlo. Al acertar las tres, la lección se marca como completada.</p>` +
       l.quiz.map((q, i) => `<div class="q" data-i="${i}"><b>${i + 1}. ${q.q}</b><div class="opts">${q.o.map((o, j) => `<button class="chip" data-j="${j}">${o}</button>`).join("")}</div><p class="hint" hidden></p></div>`).join("");
@@ -1095,50 +1610,70 @@ textarea { min-height: 110px; resize: vertical; }
       const p = qd.querySelector("p"); p.hidden = false;
       p.innerHTML = `<span class="${ok ? "tag-ok" : "tag-bad"}">${ok ? "Correcto." : "Todavía no."}</span> ${ok ? q.w : "Piensa en la idea clave de la lección y prueba otra opción."}`;
       state[i] = ok;
-      if (state.every(Boolean) && !done[l.id]) { setDone(l.id, true); renderNav(l.id); updDoneBtn(l.id); }
+      if (state.every(Boolean) && !done[dk(c.id, l.id)]) { setDone(c.id, l.id, true); renderNav(c, l.id); renderTabs(c.id); updDoneBtn(c, l); }
     });
   }
 
-  function updDoneBtn(id) {
+  function updDoneBtn(c, l) {
     const b = document.getElementById("doneBtn"); if (!b) return;
-    b.className = done[id] ? "btn done" : "btn ghost";
-    b.textContent = done[id] ? "✓ Completada (pulsa para desmarcar)" : "Marcar como completada";
+    const d = done[dk(c.id, l.id)];
+    b.className = d ? "btn done" : "btn ghost";
+    b.textContent = d ? "✓ Completada (pulsa para desmarcar)" : "Marcar como completada";
   }
 
-  function renderLesson(id) {
-    const l = L.find(x => x.id === id) || L[0];
-    renderNav(l.id);
-    main.innerHTML = `
+  function renderLesson(c, id) {
+    const l = c.lessons.find(x => x.id === id) || c.lessons[0];
+    renderTabs(c.id); renderNav(c, l.id);
+    const head = `
       <section class="panel lesson-head">
-        <span class="eyebrow">Lección ${l.id} de ${L.length}</span>
+        <span class="eyebrow">${esc(c.short)} · lección ${l.id} de ${c.lessons.length}</span>
         <h2>${l.t}</h2>
-        <span class="en">${l.en}</span>
-        <div class="head-row"><button class="btn ghost" id="doneBtn"></button><a href="${BASE + l.slug}" target="_blank" rel="noopener">Abrir la lección original ↗</a></div>
-      </section>
+        <span class="en">${esc(l.en)}${l.min ? ` · ${l.min} minutos` : ""}</span>
+        <div class="head-row"><button class="btn ghost" id="doneBtn"></button><a href="${lessonUrl(c, l)}" target="_blank" rel="noopener">Abrir la lección original ↗</a></div>
+      </section>`;
+    const navBtns = `<div class="chips">${l.id > 1 ? `<button class="btn ghost" data-go="${c.id}-l${l.id - 1}">← Lección anterior</button>` : ""}${l.id < c.lessons.length ? `<button class="btn" data-go="${c.id}-l${l.id + 1}">Lección siguiente →</button>` : `<button class="btn" data-go="ruta">Volver a la ruta →</button>`}</div>`;
+    if (!built(l)) {
+      main.innerHTML = head + `<section class="panel">
+          ${l.about ? `<h3>De qué trata</h3><p style="max-width:72ch">${l.about}</p>` : ""}
+          ${l.dom ? `<p class="hint">Dominio del examen: <b>${l.dom[0]}</b> · ${l.dom[1]} % del examen.</p>` : ""}
+          ${l.obj && l.obj.length ? `<span class="eyebrow">Objetivos oficiales</span><ul class="objs">${l.obj.map(o => `<li>${o}</li>`).join("")}</ul>` : ""}
+        </section>
+        <section class="panel"><h3>Todavía no está preparada en el laboratorio</h3>
+          <p class="hint">Se añadirá con resumen, ejercicios, ficha, tutor y mini test cuando llegues a ella. Pídele a Claude: «Ya estoy con ${esc(c.short)}, prepara sus lecciones». Mientras tanto, puedes marcarla como completada con el botón de arriba.</p></section>` + navBtns;
+      updDoneBtn(c, l);
+      document.getElementById("doneBtn").addEventListener("click", () => { setDone(c.id, l.id, !done[dk(c.id, l.id)]); updDoneBtn(c, l); renderNav(c, l.id); renderTabs(c.id); });
+      return;
+    }
+    main.innerHTML = head + `
       <section class="panel"><h3>Ideas clave</h3><ul class="ideas">${l.ideas.map(i => `<li>${i}</li>`).join("")}</ul>
         <span class="eyebrow">Vocabulario en inglés (el examen está en inglés)</span>
         <div class="terms">${l.terms.map(t => `<span class="term"><b>${t[0]}</b> · ${t[1]}</span>`).join("")}</div>
       </section>` +
       l.widgets.map((w, i) => `<section class="panel"><span class="eyebrow">Practica</span><h3>${w[0]}</h3><div class="wbody" id="w${i}"></div></section>`).join("") +
-      `<section class="panel"><span class="eyebrow">Para el examen</span>${fichaHTML(l)}</section>
+      `<section class="panel"><span class="eyebrow">Para el examen</span>${fichaHTML(c, l)}</section>
       <section class="panel" id="chat"></section>` +
-      (l.quiz ? `<section class="panel" id="quiz"></section>` : "") +
-      `<div class="chips">${l.id > 1 ? `<button class="btn ghost" data-go="l${l.id - 1}">← Lección anterior</button>` : ""}${l.id < L.length ? `<button class="btn" data-go="l${l.id + 1}">Lección siguiente →</button>` : `<button class="btn" data-go="fichas">Repasar todas las fichas →</button>`}</div>`;
-    updDoneBtn(l.id);
-    document.getElementById("doneBtn").addEventListener("click", () => { setDone(l.id, !done[l.id]); updDoneBtn(l.id); renderNav(l.id); });
+      (l.quiz ? `<section class="panel" id="quiz"></section>` : "") + navBtns;
+    updDoneBtn(c, l);
+    document.getElementById("doneBtn").addEventListener("click", () => { setDone(c.id, l.id, !done[dk(c.id, l.id)]); updDoneBtn(c, l); renderNav(c, l.id); renderTabs(c.id); });
     l.widgets.forEach((w, i) => w[1](main.querySelector("#w" + i)));
-    renderChat(main.querySelector("#chat"), l);
-    if (l.quiz) renderQuiz(main.querySelector("#quiz"), l);
+    renderChat(main.querySelector("#chat"), c, l);
+    if (l.quiz) renderQuiz(main.querySelector("#quiz"), c, l);
   }
 
   document.addEventListener("click", e => { const b = e.target.closest("[data-go]"); if (b) { location.hash = b.dataset.go; window.scrollTo(0, 0); } });
   document.getElementById("goFichas").addEventListener("click", () => { location.hash = "fichas"; window.scrollTo(0, 0); });
 
   const route = () => {
-    if (location.hash === "#fichas") return renderFichas();
-    const m = /^#l(\d+)$/.exec(location.hash);
-    renderLesson(m ? +m[1] : store.get("last", 1));
-    if (m) store.set("last", +m[1]);
+    let h = location.hash.slice(1);
+    if (/^l\d+$/.test(h)) h = "cap-" + h;
+    if (!h) h = store.get("route", "ruta");
+    if (h === "fichas") renderFichas();
+    else if (h === "ruta") renderRuta();
+    else {
+      const m = /^([a-z0-9]+)-l(\d+)$/.exec(h);
+      if (m && CBY[m[1]]) renderLesson(CBY[m[1]], +m[2]); else { h = "ruta"; renderRuta(); }
+    }
+    store.set("route", h);
   };
   window.addEventListener("hashchange", route);
   progress(); route();
