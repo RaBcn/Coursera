@@ -228,6 +228,11 @@ textarea { min-height: 110px; resize: vertical; }
 .dom .track { height: 12px; background: var(--bg); border: 1px solid var(--line); border-radius: 4px; overflow: hidden; }
 .dom .fill { height: 100%; background: var(--lim); }
 .dom .pct { font-family: var(--font-mono); text-align: right; font-variant-numeric: tabular-nums; }
+.steps-list { display: flex; flex-direction: column; gap: 6px; }
+.step-row { display: grid; grid-template-columns: 34px minmax(0, 1fr) auto; gap: 12px; align-items: center; text-align: left; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--line); background: var(--bg); }
+.step-row:hover { border-color: var(--cap); }
+.step-row .num { font-family: var(--font-display); font-weight: 700; font-size: 1.2rem; color: var(--cap); text-align: center; }
+.step-row .st { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 .objs { margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 4px; max-width: 72ch; }
 
 @media (max-width: 820px) {
@@ -253,9 +258,9 @@ textarea { min-height: 110px; resize: vertical; }
 <div class="wrap">
   <header class="top">
     <div>
-      <div class="eyebrow">Certificación · Claude Certified Associate – Foundations</div>
+      <div class="eyebrow">Ruta Claude Associate · examen Claude Certified Associate – Foundations</div>
       <h1>Laboratorio de IA</h1>
-      <p class="sub">Los cursos de la certificación Claude Certified Associate, lección a lección, en español: resumen, ejercicios para tocar los conceptos, ficha de examen y un tutor al que preguntar dudas.</p>
+      <p class="sub">La ruta Claude Associate, paso a paso, en español: resumen, ejercicios para tocar los conceptos, ficha de examen y un tutor al que preguntar dudas.</p>
     </div>
     <div class="top-right">
       <div class="progress" aria-live="polite">
@@ -1463,19 +1468,109 @@ textarea { min-height: 110px; resize: vertical; }
       obj: [] }
   ].map(m => Object.assign(m, { url: CCA_BASE + m.slug }));
 
+  // ============ Widget: mapa de modelos ============
+  function wModelMap(el) {
+    const DUR = ["Minutos", "Una hora", "Un día", "Varios días"], CLR = ["Muy claro", "Bastante claro", "Algo abierto", "Pregunta abierta"];
+    const EX = [
+      [0, 1, "Haiku o Sonnet", "Clasificar 200 correos por tema · reformatear una lista · respuestas rápidas y repetitivas"],
+      [2, 3, "Sonnet u Opus", "Redactar un informe con datos que le das · resumir una reunión larga · preparar una presentación con un esquema claro"],
+      [4, 5, "Opus", "Analizar varias fuentes para recomendar una decisión · rediseñar un proceso de tu equipo · un plan con muchas piezas"],
+      [6, 6, "Opus o Fable", "Proyectos largos y abiertos de varios días: una estrategia nueva, una investigación ambiciosa sin respuesta clara"]
+    ];
+    el.innerHTML = `<p class="hint">Describe el tipo de trabajo que haces. Es una ilustración del curso, no una regla: también importan lo que está en juego, lo fácil que te resulte comprobarlo y la prisa que tengas.</p>
+      <div class="ctrl"><label for="mmd">¿Cuánto te llevaría sin IA? <input type="range" id="mmd" min="0" max="3" value="1"> <span class="mono" id="mmdv"></span></label>
+      <label for="mmc">¿Está claro cuál es el resultado correcto? <input type="range" id="mmc" min="0" max="3" value="1"> <span class="mono" id="mmcv"></span></label></div>
+      <div class="out cap" id="mmo" aria-live="polite"></div>`;
+    const $ = s => el.querySelector(s);
+    const upd = () => {
+      const d = +$("#mmd").value, c = +$("#mmc").value, s = d + c;
+      $("#mmdv").textContent = DUR[d]; $("#mmcv").textContent = CLR[c];
+      const e = EX.find(x => s >= x[0] && s <= x[1]);
+      $("#mmo").innerHTML = `<b>Modelos que encajan: ${e[2]}</b><br>Tareas parecidas: ${e[3]}.<br><span class="hint">Cuanto más larga y menos definida es la tarea, más ayuda un modelo más capaz.</span>`;
+    };
+    el.addEventListener("input", upd); upd();
+  }
+
+  const MODEL = [
+    { id: 1, t: "Elegir el modelo de Claude", en: "Choosing a Claude model for knowledge workers", url: "https://academy.claude.com/tutorials/choosing-the-right-claude-model", min: 10,
+      ideas: [
+        "Claude tiene cuatro modelos: <b>Fable, Opus, Sonnet y Haiku</b>. Se diferencian en capacidad, velocidad y en cuánto gastan de tu límite de uso.",
+        "El modelo fija la capacidad: conocimiento, razonamiento y criterio. Uno más capaz maneja mejor la ambigüedad y las tareas largas, y a menudo llega en menos turnos. Uno menos capaz responde más rápido y rinde mejor en tareas concretas y acotadas.",
+        "Recomendación: <b>empezar con Opus</b>, que es el modelo por defecto en Pro, Max, Ultra y Team. Si tu plan u organización empieza en Sonnet, empieza ahí. Free incluye Haiku y Sonnet; los planes de pago añaden Opus.",
+        "Tienes dos palancas en el menú, junto al botón de enviar: el <b>modelo</b> y el <b>esfuerzo</b> (effort). Antes de tocar nada, revisa que el prompt y los archivos tenían lo necesario. Luego cambia una sola cosa cada vez, <b>empezando por el esfuerzo</b>.",
+        "El uso se mide en <b>tokens</b>. El modelo fija el precio por token y el esfuerzo, cuántos tokens se gastan. Lo que importa es el <b>coste por tarea</b>: en trabajo largo o ambiguo, un modelo más capaz puede salir más barato porque necesita menos turnos. Para gastar menos, baja primero el esfuerzo."
+      ],
+      terms: [["Effort", "esfuerzo"], ["Usage limit", "límite de uso"], ["Tokens", "unidades de texto"], ["Cost per task", "coste por tarea"], ["Model menu", "menú de modelos"]],
+      ficha: [["Modelos", "Fable (largo y ambicioso) · Opus (punto de partida) · Sonnet (equilibrio) · Haiku (rápido, volumen)."], ["Dónde empezar", "Opus; o Sonnet si tu plan empieza ahí."], ["Palancas", "Modelo (capacidad) y esfuerzo (cuánto trabaja). Primero el esfuerzo, una cosa cada vez."], ["Coste", "Tokens. Modelo = precio por token; esfuerzo = cantidad. Mira el coste por tarea."], ["Probar", "Dos tareas (una acotada y una larga) en Opus y Sonnet, mismo prompt; cuenta los turnos."]],
+      recuerda: "Si algo falla, sube el esfuerzo antes de cambiar de modelo.",
+      widgets: [["¿Qué ajustarías?", wClassify(
+        { up: "Subir el esfuerzo", big: "Modelo más capaz", down: "Bajar el esfuerzo", small: "Modelo menos capaz" },
+        [["up", "Se salta instrucciones o deja el trabajo a medias.", "Primero, más esfuerzo con el mismo modelo."],
+         ["big", "Ya subiste el esfuerzo y la calidad sigue sin llegar.", "Ahora sí: cambia a un modelo más capaz."],
+         ["down", "Las respuestas son cada vez más largas sin ser mejores.", "Baja el esfuerzo."],
+         ["small", "Bajaste el esfuerzo, la calidad se mantiene y quieres ir más rápido.", "Prueba un modelo menos capaz."]],
+        "Según lo que notas en la respuesta, elige qué cambiarías primero.")],
+        ["¿Cómo es tu trabajo?", wModelMap],
+        ["Tu prueba", wNote("model", "El tutorial propone: elige una tarea acotada y otra larga, ejecútalas en Opus y en Sonnet con el mismo prompt y apunta cuántos turnos necesitó cada uno.", "Tarea acotada: … · Opus: … turnos · Sonnet: … turnos\nTarea larga: …")]],
+      quiz: [
+        { q: "¿Con qué modelo recomienda empezar el tutorial para la mayoría del trabajo?", o: ["Haiku", "Opus", "Fable"], a: 1, w: "O Sonnet si tu plan empieza ahí." },
+        { q: "El resultado deja el trabajo a medias. ¿Qué cambias primero?", o: ["Cambio a Fable", "Subo el esfuerzo", "Bajo el esfuerzo"], a: 1, w: "Una cosa cada vez, empezando por el esfuerzo." },
+        { q: "¿Por qué un modelo más capaz puede salir más barato?", o: ["Porque cada token es más barato", "Porque en tareas largas necesita menos turnos", "No puede salir más barato"], a: 1, w: "Lo que cuenta es el coste por tarea." }
+      ] }
+  ];
+
+  const COW = [
+    [1, "Qué es Claude Cowork", "What is Claude Cowork", "what-is-cowork"],
+    [2, "Configurar Claude Cowork", "Setting up Claude Cowork", "getting-set-up"],
+    [3, "Qué puede hacer Cowork por ti", "What Claude Cowork can do for you", "scheduled-tasks"],
+    [4, "Tu primera tarea en Cowork", "Hand Claude Cowork your first task", "the-task-loop"],
+    [5, "Mejores resultados, más rápido", "Get better results faster", "research-analysis-at-scale"],
+    [6, "Contexto fijo: instrucciones globales y proyectos", "Standing context: Global instructions and projects", "giving-cowork-context"],
+    [7, "Skills: enséñale a Cowork tu forma de trabajar", "Skills: Teach Claude Cowork your way", "file-document-tasks"],
+    [8, "Plugins: la experiencia de tu equipo", "Plugins: Encode your team's expertise", "plugins-cowork-as-a-specialist"],
+    [9, "Claude in Chrome", "Claude in Chrome", "claude-in-chrome"],
+    [10, "Claude for Microsoft 365", "Claude for Microsoft 365", "claude-for-microsoft-365"],
+    [11, "Buenas prácticas para trabajar con seguridad", "Best practices for working safely", "permissions-usage-choosing-your-model"],
+    [12, "Validar skills para plugins", "Validating skills for plugins", "validating-skills-for-plugins"],
+    [13, "Compartir lo que creas con tu equipo", "Share what you build with your team", "share-what-you-build-with-your-team"],
+    [14, "Cierre y próximos pasos", "Wrap up and next steps", "troubleshooting-next-steps"],
+    [15, "Examen sobre Claude Cowork", "Quiz on Claude Cowork", "quiz-on-claude-cowork"]
+  ].map(r => ({ id: r[0], t: r[1], en: r[2], slug: r[3] }));
+
+  const FUNC = [
+    { id: 1, t: "Claude para tu función", en: "Claude for your function", url: "https://academy.claude.com/use-cases", min: 30,
+      about: "Explora en la galería de Claude Academy los casos de uso de tu trabajo (marketing, finanzas, legal, RR. HH., ventas u operaciones) y prueba uno con tu propio trabajo. La lección 11 de Claude 101 es un buen punto de partida.", obj: [] }
+  ];
+
   const COURSES = [
-    { id: "c101", n: 1, t: "Claude 101", short: "Claude 101", role: "Curso previo recomendado", base: "https://academy.claude.com/courses/claude-101/", lessons: C101,
-      desc: "Usar Claude en el trabajo diario: primera conversación, prompts, proyectos, artifacts, skills, conectores y otras herramientas." },
-    { id: "flu", n: 2, t: "AI Fluency: Framework & Foundations", short: "AI Fluency", role: "Curso previo recomendado", base: "https://academy.claude.com/courses/ai-fluency-framework-foundations/", lessons: FLU,
-      desc: "El marco de las 4D: Delegación, Descripción, Discernimiento y Diligencia." },
-    { id: "cap", n: 3, t: "AI Capabilities and Limitations", short: "Capacidades y limitaciones", role: "Curso previo recomendado", base: BASE, lessons: CAP,
+    { id: "cap", t: "AI Capabilities and Limitations", short: "Capacidades y limitaciones", base: BASE, lessons: CAP,
       desc: "Qué puede y qué no puede hacer un modelo de lenguaje: las cuatro propiedades y cómo chocan." },
-    { id: "cca", n: 4, t: "Claude Certified Associate – Foundations Prep Course", short: "Preparación del examen", role: "Curso de preparación (8 módulos)", base: CCA_BASE, lessons: CCA,
-      desc: "Siete habilidades para usar Claude con resultados fiables y repetibles, alineadas con los siete dominios del examen." }
+    { id: "c101", t: "Claude 101", short: "Claude 101", base: "https://academy.claude.com/courses/claude-101/", lessons: C101,
+      desc: "Usar Claude en el trabajo diario: prompts, proyectos, artifacts, skills, conectores y Research." },
+    { id: "cca", t: "Módulos de preparación del examen", short: "Módulos del examen", base: CCA_BASE, lessons: CCA,
+      desc: "Los 8 módulos del curso Claude Certified Associate – Foundations. Cinco están en la ruta; dos más los pide el examen." },
+    { id: "model", t: "Choosing the right Claude model", short: "Elegir modelo", base: "https://academy.claude.com/tutorials/choosing-the-right-claude-model", lessons: MODEL,
+      desc: "Qué modelo usar, cuándo subir o bajar el esfuerzo y cuánto gasta cada uno." },
+    { id: "cow", t: "Introduction to Claude Cowork", short: "Claude Cowork", base: "https://academy.claude.com/courses/introduction-to-claude-cowork/", lessons: COW,
+      desc: "Encargar a Claude trabajo de varios pasos: tareas programadas, contexto, skills, plugins y seguridad." },
+    { id: "func", t: "Claude for your function", short: "Tu función", base: "https://academy.claude.com/use-cases", lessons: FUNC,
+      desc: "Casos de uso de tu trabajo en la galería de Claude Academy." },
+    { id: "flu", t: "AI Fluency: Framework & Foundations", short: "AI Fluency (opcional)", base: "https://academy.claude.com/courses/ai-fluency-framework-foundations/", lessons: FLU,
+      desc: "El marco de las 4D. Opcional en la ruta, pero sus ideas aparecen en todo el examen." }
   ];
   const CBY = Object.fromEntries(COURSES.map(c => [c.id, c]));
   const lessonUrl = (c, l) => l.url || (c.base + l.slug);
   const built = l => !!l.ideas;
+
+  // La ruta oficial «Claude Associate path» (anthropic-partners.skilljar.com/path/claude-associate)
+  const PATH = [
+    { g: "Base", steps: [[1, "cap", null, "AI Capabilities and Limitations", "≈ 60 min"], [2, "c101", null, "Claude 101", "≈ 60 min"], [3, "cca", 1, "Claude Platform and Model Foundations", "59 min"], [4, "model", null, "Choosing the right Claude model", "≈ 10 min"]] },
+    { g: "Trabajar con Claude en el día a día", steps: [[5, "cca", 2, "Prompting and Task Execution", "53 min"], [6, "cca", 3, "Evaluating and Validating Claude's Output", "74 min"], [7, "cow", null, "Introduction to Claude Cowork", "≈ 60 min"]] },
+    { g: "Encontrar un caso de uso y usarlo con responsabilidad", steps: [[8, "cca", 4, "Workflow Integration and Solution Design", "63 min"], [9, "cca", 6, "Governance, Risk and Responsible Use", "55 min"]] },
+    { g: "Tu función", steps: [[10, "func", null, "Claude for your function", "≈ 30 min"]] }
+  ];
+  const EXTRA = [["cca", 5, "Configuration and Knowledge Management", "47 min"], ["cca", 7, "Troubleshooting and Optimization", "30 min"], ["cca", 8, "Course Summary & Next Steps", "8 min"]];
+  const STEPS = PATH.flatMap(g => g.steps);
 
   // Migrar el progreso guardado de la versión anterior (solo había un curso)
   (function migrate() {
@@ -1539,24 +1634,10 @@ textarea { min-height: 110px; resize: vertical; }
 
   // ============ Render ============
   const nav = document.getElementById("nav"), main = document.getElementById("main"), ctabs = document.getElementById("ctabs");
-  const ALL = COURSES.reduce((n, c) => n + c.lessons.length, 0);
-  const cDone = c => c.lessons.filter(l => done[dk(c.id, l.id)]).length;
-
-  function setDone(cid, id, v) { const k = dk(cid, id); if (v) done[k] = true; else delete done[k]; store.set("done", done); progress(); }
-  function progress() {
-    const n = COURSES.reduce((s, c) => s + cDone(c), 0);
-    document.getElementById("progLbl").textContent = `${n} de ${ALL} lecciones de la certificación completadas`;
-    document.getElementById("progBar").style.width = (n / ALL * 100) + "%";
-  }
-
-  function renderTabs(cur) {
-    ctabs.innerHTML = `<button class="ctab" data-go="ruta" aria-current="${cur === "ruta"}">Ruta de certificación</button>` +
-      COURSES.map(c => `<button class="ctab" data-go="${c.id}-l1" aria-current="${cur === c.id}"><span class="k">${c.n}</span>${c.short}<span class="k">${cDone(c)}/${c.lessons.length}</span></button>`).join("") +
-      `<button class="ctab" data-go="fichas" aria-current="${cur === "fichas"}">★ Fichas</button>`;
-  }
+    const cDone = c => c.lessons.filter(l => done[dk(c.id, l.id)]).length;
 
   function renderNav(c, curId) {
-    if (!c) { nav.innerHTML = COURSES.map(x => `<button data-go="${x.id}-l1"><span class="n">${x.n}</span><span class="t">${x.short}</span><span class="s">${cDone(x) === x.lessons.length ? "✓" : ""}</span></button>`).join(""); return; }
+    if (!c) { nav.innerHTML = COURSES.map((x, i) => `<button data-go="${x.id}-l1"><span class="n">${i + 1}</span><span class="t">${x.short}</span><span class="s">${cDone(x) === x.lessons.length ? "✓" : ""}</span></button>`).join(""); return; }
     nav.innerHTML = `<span class="eyebrow" style="padding:4px 10px">${esc(c.short)}</span>` + c.lessons.map(l => `
       <button data-go="${c.id}-l${l.id}" aria-current="${l.id === curId}">
         <span class="n">${String(l.id).padStart(2, "0")}</span><span class="t">${l.t}</span>
@@ -1570,24 +1651,54 @@ textarea { min-height: 110px; resize: vertical; }
       <p class="rec">${l.recuerda}</p>
     </article>`;
 
+  function stepState(cid, lid) {
+    const c = CBY[cid];
+    if (lid) { const d = !!done[dk(cid, lid)]; return { d: d ? 1 : 0, n: 1, full: d }; }
+    const d = cDone(c); return { d, n: c.lessons.length, full: d === c.lessons.length };
+  }
+  function stepReady(cid, lid) { const c = CBY[cid]; return lid ? built(c.lessons.find(l => l.id === lid)) : c.lessons.every(built); }
+
+  function setDone(cid, id, v) { const k = dk(cid, id); if (v) done[k] = true; else delete done[k]; store.set("done", done); progress(); }
+  function progress() {
+    const n = STEPS.filter(s => stepState(s[1], s[2]).full).length;
+    document.getElementById("progLbl").textContent = `${n} de ${STEPS.length} pasos de la ruta completados`;
+    document.getElementById("progBar").style.width = (n / STEPS.length * 100) + "%";
+  }
+
+  function renderTabs(cur) {
+    ctabs.innerHTML = `<button class="ctab" data-go="ruta" aria-current="${cur === "ruta"}">Ruta</button>` +
+      COURSES.map(c => `<button class="ctab" data-go="${c.id}-l1" aria-current="${cur === c.id}">${c.short}<span class="k">${cDone(c)}/${c.lessons.length}</span></button>`).join("") +
+      `<button class="ctab" data-go="fichas" aria-current="${cur === "fichas"}">★ Fichas</button>`;
+  }
+
+  function stepRow(num, cid, lid, title, min) {
+    const st = stepState(cid, lid), ready = stepReady(cid, lid);
+    const pill = st.full ? `<span class="pill done">✓ Hecho</span>` : st.d ? `<span class="pill prog">${st.d}/${st.n}</span>` : `<span class="pill">Pendiente</span>`;
+    return `<button class="step-row" data-go="${cid}-l${lid || 1}">
+      <span class="num">${num}</span>
+      <span class="st"><b>${title}</b><span class="hint">${min} · ${ready ? "preparado en el laboratorio" : "aún sin preparar en el laboratorio"}</span></span>
+      ${pill}</button>`;
+  }
+
   function renderRuta() {
     renderTabs("ruta"); renderNav(null);
     const doms = CCA.filter(m => m.dom);
     main.innerHTML = `
-      <section class="panel lesson-head"><span class="eyebrow">Certificación</span><h2>Claude Certified Associate – Foundations</h2>
-        <p class="hint">Ruta oficial según la web de Anthropic Partners: tres cursos previos recomendados y un curso de preparación de ocho módulos. El orden de abajo es el recomendado; tú ya has hecho «AI Capabilities and Limitations».</p>
-        <p class="hint">El examen cuesta 99 USD y, por ahora, solo pueden hacerlo personas de organizaciones del Claude Partner Network (según la web de partners; confírmalo allí antes de apuntarte).</p></section>
-      <div class="route-grid">${COURSES.map(c => {
-        const d = cDone(c), n = c.lessons.length, b = c.lessons.filter(built).length;
-        const st = d === n ? ["done", "Completado"] : d > 0 ? ["prog", "En curso"] : ["", "Pendiente"];
-        return `<div class="ccard"><span class="eyebrow">${c.n} · ${c.role}</span><h3>${c.t}</h3><p class="hint">${c.desc}</p>
-          <span class="pill ${st[0]}">${st[1]} · ${d}/${n}</span><div class="minibar"><i style="width:${d / n * 100}%"></i></div>
-          <p class="hint">${b === n ? "Preparado en el laboratorio." : b === 0 ? "Aún sin preparar en el laboratorio." : `${b} de ${n} lecciones preparadas.`}</p>
-          <div class="chips"><button class="btn ${b ? "" : "ghost"}" data-go="${c.id}-l1">${b ? "Abrir" : "Ver lecciones"}</button><a href="${c.base}" target="_blank" rel="noopener">Curso oficial ↗</a></div></div>`;
-      }).join("")}</div>
-      <section class="panel"><span class="eyebrow">El examen</span><h3>Los siete dominios y su peso</h3>
-        <p class="hint">Cada módulo del curso de preparación corresponde a un dominio. Los pesos vienen de una guía de estudio publicada en GitHub; confírmalos en la web oficial. El más pesado es «evaluar y validar» (21 %).</p>
+      <section class="panel lesson-head"><span class="eyebrow">Ruta oficial · unas 9 horas</span><h2>Claude Associate path</h2>
+        <p style="max-width:70ch">Al final podrás coger un proceso de tu propio trabajo, rediseñarlo con Claude (un proyecto, una skill, una tarea de varios pasos o un conector), anotar qué puede fallar y qué compruebas, y explicárselo a un compañero.</p>
+        <p class="hint">Es la ruta que publica Anthropic Partners para personas de marketing, finanzas, RR. HH., legal, operaciones o consultoría. Los cursos se pueden hacer en orden o de uno en uno.</p></section>
+      ${PATH.map(g => `<section class="panel"><span class="eyebrow">${g.g}</span><div class="steps-list">${g.steps.map(s => stepRow(s[0], s[1], s[2], s[3], s[4])).join("")}</div></section>`).join("")}
+      <section class="panel"><span class="eyebrow">Para el examen</span><h3>Claude Certified Associate – Foundations</h3>
+        <p class="hint" style="max-width:72ch">La ruta cubre casi todo el examen, pero le faltan dos módulos del curso de preparación. Hazlos antes de apuntarte. El examen cuesta 99 USD y, por ahora, solo pueden hacerlo personas de organizaciones del Claude Partner Network (confírmalo en la web oficial).</p>
+        <div class="steps-list">${EXTRA.map((e, i) => stepRow(["A", "B", "C"][i], e[0], e[1], e[2], e[3])).join("")}</div>
+        <span class="eyebrow" style="margin-top:8px">Peso de cada dominio</span>
+        <p class="hint">Cada módulo corresponde a un dominio. Los pesos vienen de una guía de estudio publicada en GitHub; confírmalos en la web oficial.</p>
         <div class="doms">${doms.slice().sort((a, b) => b.dom[1] - a.dom[1]).map(m => `<div class="dom"><span><b>${m.dom[0]}</b><br><span class="hint">Módulo ${m.id}: ${m.t}</span></span><div class="track"><div class="fill" style="width:${m.dom[1] / 21 * 100}%"></div></div><span class="pct">${m.dom[1]} %</span></div>`).join("")}</div>
+      </section>
+      <section class="panel"><span class="eyebrow">Opcional</span><h3>Para ir más allá</h3>
+        <div class="steps-list">${stepRow("+", "flu", null, "AI Fluency: Framework and foundations", "15 lecciones")}</div>
+        <p class="hint">Tutoriales cortos de Claude Academy que recomienda la ruta:</p>
+        <ul class="objs">${[["Intro to Projects", "intro-to-projects"], ["Getting started with connectors", "getting-started-with-connectors"], ["Using Research", "using-research"], ["Choosing between Claude Cowork or Chat", "choosing-between-claude-cowork-or-chat"], ["Customize Claude Cowork", "customize-claude-cowork"], ["Teach Claude your way of working using skills", "teach-claude-your-way-of-working-using-skills"], ["Scaling workflows with Claude Cowork at your organization", "scaling-workflows-with-claude-cowork-at-your-organization"]].map(t => `<li><a href="https://academy.claude.com/tutorials/${t[1]}" target="_blank" rel="noopener">${t[0]} ↗</a></li>`).join("")}</ul>
       </section>`;
   }
 
@@ -1595,7 +1706,7 @@ textarea { min-height: 110px; resize: vertical; }
     renderTabs("fichas"); renderNav(null);
     main.innerHTML = `<section class="panel lesson-head"><span class="eyebrow">Repaso</span><h2>Fichas de examen</h2>
       <p class="hint">Una ficha por lección preparada, agrupadas por curso. Repásalas antes del examen.</p></section>` +
-      COURSES.map(c => { const ls = c.lessons.filter(built); return ls.length ? `<section class="wbody"><h3>${c.n} · ${c.t}</h3><div class="fichas-grid">${ls.map(l => fichaHTML(c, l)).join("")}</div></section>` : ""; }).join("");
+      COURSES.map(c => { const ls = c.lessons.filter(built); return ls.length ? `<section class="wbody"><h3>${c.t}</h3><div class="fichas-grid">${ls.map(l => fichaHTML(c, l)).join("")}</div></section>` : ""; }).join("");
   }
 
   function renderQuiz(el, c, l) {
@@ -1639,7 +1750,7 @@ textarea { min-height: 110px; resize: vertical; }
           ${l.obj && l.obj.length ? `<span class="eyebrow">Objetivos oficiales</span><ul class="objs">${l.obj.map(o => `<li>${o}</li>`).join("")}</ul>` : ""}
         </section>
         <section class="panel"><h3>Todavía no está preparada en el laboratorio</h3>
-          <p class="hint">Se añadirá con resumen, ejercicios, ficha, tutor y mini test cuando llegues a ella. Pídele a Claude: «Ya estoy con ${esc(c.short)}, prepara sus lecciones». Mientras tanto, puedes marcarla como completada con el botón de arriba.</p></section>` + navBtns;
+          <p class="hint">Se añadirá con resumen, ejercicios, ficha, tutor y mini test cuando llegues a ella. Pídele a Claude: «Ya estoy con «${esc(l.en)}», prepárala». Mientras tanto, puedes marcarla como completada con el botón de arriba.</p></section>` + navBtns;
       updDoneBtn(c, l);
       document.getElementById("doneBtn").addEventListener("click", () => { setDone(c.id, l.id, !done[dk(c.id, l.id)]); updDoneBtn(c, l); renderNav(c, l.id); renderTabs(c.id); });
       return;
